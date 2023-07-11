@@ -10,27 +10,41 @@ changes that need to be made, and if so make the changes.
 
 ***Alpha release only***
 
+## Setup
+
+In the `cfg` directory of this repository, you will find the example configuration file.  
+Copy the file `cfg\example-config.yaml` to `cfg/config.yaml` and edit the settings specific to your needs.
+
+Common settings to update will be the settings identified below:
+
+```yaml
+aria:
+  svc_account: 'sa::example-dashboards-gitops'
+  api_token: '4example-th1s-ismy-d3m0-apitoken4u2c'
+  operations_url: 'https://vmware.wavefront.com'
+```
+
 ## Dashboard Development
 
-For additional information on developing dashboards with this workflow, please see [Dashboard Development] (dashboards/DashboardDevelopment.md)
+For additional information on developing dashboards with this workflow, please see [Dashboard Development](dashboards/DashboardDevelopment.md).
 
 ## `wapi.sh` Usage
 
-    A single option of -d is required for task to work and app will cycle through dashboards and 
-    compare with existing version. If changes are detected, then the app will push copy from the 
-    dashboards directory.
-    
-    These options do not accept arguments
-    At least one of these flags is required
-    -a Process Alert modifications (future)
-    -d Process Dashboard modifications
-    -u Process Account modifications (future)
-    -h Print this message
+A single option of -d is required for task to work and app will cycle through dashboards and
+compare with existing version. If changes are detected, then the app will push copy from the
+dashboards directory.
 
-    These optional flags require arguments
-    -i <value> Dashboard ID of the target Dashboard
-    -s <value> Dashboard ID of the source Dashboard
-    -t <value> API Token to override config API token
+These options do not accept arguments
+At least one of these flags is required
+-a Process Alert modifications (future)
+-d Process Dashboard modifications
+-u Process Account modifications (future)
+-h Print this message
+
+These optional flags require arguments
+-i OPTION_VALUE Dashboard ID of the target Dashboard
+-s OPTION_VALUE Dashboard ID of the source Dashboard
+-t OPTION_VALUE API Token to override config API token
 
 ## Pipelines
 

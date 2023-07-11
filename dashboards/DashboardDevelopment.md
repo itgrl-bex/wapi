@@ -1,14 +1,51 @@
 # Dashboard Development
 
-To retrieve the json code for a dashboard that you have been working on, you will need the dashboard ID.
+This document will provide general guidance on how to use the tools for dashboard development.
 
 ## Prepare working copy of repository
 
-### Open an issue in repository
+The working copy will be stored on your development workstation in folder that is somewhere that only you can get. The reason for this is so that only you can make commits and push code using your keys or credentials.  Each dashboard developer should have their own copy of the code and not share a copy. The sharing is done through the remote git repository.
 
 ### Clone this repository
 
+[The WAPI Repository](https://github.com/itgrl-bex/wapi) is where it all begins.
+
+1. Click the [link](https://github.com/itgrl-bex/wapi)
+2. Click on the down arrow in the green `Code` button
+3. Choose protocol
+   1. Choose SSH or HTML and copy URL
+   2. Download as a zip file
+4. Clone or extract the repository into a directory on your development workstation.
+
+### Open an issue in repository
+
+Whenever we are working on a change or have an issue with the tooling, we should open an issue in the repository.
+The issues will help identify items reported to be worked on as well as identify what is currently being worked.
+Each PR should be linked to an issue so that all communication related to the change can be related and tracked.
+Additionally all communications should be handled through the issue or the PR related to the change so they can easily be seen.
+The Jira story should also be linked to the issue when opening to complete the reference and transparency.
+
+1. Open the repository.
+2. Click issues.
+3. Click new issue.
+4. The Title should start with the Jira # of the story.
+5. Provide a detailed description of the issue.
+6. If you are doing the dashboard development, assign the issue to yourself.
+
 ### Make your feature branch
+
+Feature branches are a good way to track code related to specific issues or user stories.
+Since we create issues in the repos, we should start our feature branch with the issue number
+and then follow it with a short description of the change.
+
+1. We created issue number 12 to add an additional chart for max memory usage for the day.
+2. We have cloned our repository to our development workstation.
+3. We should now do a git pull --rebase on the main branch on our development workstation.
+4. After ensuring that we have all the latest changes at the time in our local main branch,
+   1. Create feature branch starting with 12_max-mem-usage-daily on your development workstation.
+   2. Make all changes related to this issue in this feature branch.
+   3. Do not make changes related to other issues in this feature branch.
+5. Ensure that you are in the feature branch that you just created on your development workstation.
 
 ## Retrieve the work that you have done in the SAAS visual editor
 
@@ -56,7 +93,7 @@ Here we are showing two different methods for retrieving the URL or Dashboard ID
    2. Click Dashboards.
    3. Click All Dashboards.
    4. Search for your Dashboard.
-   5. Copy value after `URL - `.
+   5. Copy value after `URL -`.
 
 ### Getting the Dashboard JSON
 
@@ -93,9 +130,27 @@ Do not edit the configs located in the `cfg/` directory unless you are changing 
 
 ### Document the issue
 
-### Preparing for Pull Request
+We want to make sure that we document any gotchas, design decision points, and the overall change in the issue.
+It is a good habit to have this information documented and you can alway use or reference it in your pull request and peer reviews later.
+
+### Preparing for Pull Request (PR)
+
+One of the first things we should do in preparation for a PR is to make sure that we have documented our changes and that we are ready for a peer review. After that is done, we also want to ensure that we have the latest copy of the main branch so that we incorporate any new code or changes that may have taken place while we were developing.  
+
+1. We should now do a git pull --rebase on the main branch on our development workstation.
+2. Now we should merge the main branch into our feature branch.
+3. Next we need to resolve any merge conflicts that may arise.
+4. After a quick review of the merge and merge conflict resolution,
+   1. We need to review our code changes and make sure they are still good.
+   2. We need to commit the merge and conflict resolution.
+   3. We then need to push or publish our feature branch to the remote repository.
 
 ### Peer Review
 
-### Submitting the PR
+Peer review is a good way to ensure that the requirements of the issue are being met by the change and that our interpretation of the requirements is on par with what is expected. A peer review also helps keep the code base more consistent so that it does not end up being the wild, wild west.
 
+A peer code review could be as simple as sending a peer the link to your working copy of the dashboard and the link to your published feature branch to review.
+
+### Submitting the Pull Request (PR)
+
+Create the PR in the repository and include all design decisions, Jira story #s, who did the peer review, and a synopsis of what the change is. You should also link the Pull Request to the issue so they can both be closed at the same time.

@@ -37,7 +37,7 @@ You will now be prompted for your API Token and the Dashboard ID to retrieve.
 
 if [[ -z "${ENV_WAPI_USER_TOKEN}" ]];
 then
-    # api_token="USER INPIT"
+    # api_token="USER INPUT"
     read -p "Enter your API token: " api_token
 else
     api_token="${ENV_WAPI_USER_TOKEN}"
