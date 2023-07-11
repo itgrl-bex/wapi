@@ -1,0 +1,14 @@
+log/*
+dashboards/responses/*
+dashboards/source/*
+working-notes/*
+Foundation-Capacity-Planner.json
+dashboards/Sample-TAS-Application-Scorecard.json
+dashboards/TAS-Foundation-Tuning--TAS-Org-Analysis-Clone-1.json
+dashboards/TAS-Foundation-Tuning--TAS-Org-Analysis-Detail.json
+working_notes/Foundation-Capacity-Planner.json
+working_notes/Sample-TAS-Application-Scorecard.json
+working_notes/TAS-Foundation-Tuning--TAS-Org-Analysis-Clone-1.json
+working_notes/TAS-Foundation-Tuning--TAS-Org-Analysis-Detail.json
+cfg/config.yaml
+.vscode/settings.json

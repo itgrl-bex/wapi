@@ -1,0 +1,22 @@
+resources:
+- name: wapi
+  type: git
+  icon: github
+  source:
+    uri: 
+
+jobs:
+- name: configure-self
+  plan:
+  - get: wapi
+    trigger: true
+  - set_pipeline: self
+    file: wapi/pipelines/parent-pipeline.yml
+- name: configure-pipelines
+  plan:
+  - get: wapi
+    trigger: true
+    passed: [configure-self]
+  - set_pipeline: ''
+    file: wapi/pipelines/dashboard.yml
+    

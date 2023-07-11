@@ -1,0 +1,25 @@
+---
+app_name: 'wapi'
+aria:
+  svc_account: 'sa::example-dashboards-gitops'
+  api_token: '4example-th1s-ismy-d3m0-apitoken4u2c'
+  operations_url: 'https://vmware.wavefront.com'
+
+dashboard:
+  dir: '/dashboards'
+  sourceDir: '/dashboards/source'
+  clean_tmp_files: false
+  tags:
+  - published.dashboard
+
+logging:
+  # Logging Level configuration works as follows:
+  # DEBUG - Provides all logging output
+  # INFO  - Provides all but debug messages
+  # WARN  - Provides all but debug and info
+  # ERROR - Provides all but debug, info and warn
+  #
+  # SEVERE and CRITICAL are also supported levels as extremes of ERROR
+  # SEVERE and CRITICAL will exit the program and log the exit
+  level: 'WARN'
+  dir: "/var/log/${CONF_app_name}"
