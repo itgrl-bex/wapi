@@ -32,34 +32,40 @@ unset CONF_aria_api_token
 while getopts "bdua :hi:s:t:" option; do
    case $option in
       b) # Becca's test code
+         source ${baseDir}/lib/libdashboard.sh
+         source ${baseDir}/lib/libalert.sh
+         source ${baseDir}/lib/libaccount.sh
+
          action=unit
          ;;
       d) # Execute Dashboard logic
-         echo "I'm a dashboard"
+         source ${baseDir}/lib/libdashboard.sh
          action='dashboard'
          logThis "The -${option} flag was set." "DEBUG"
          logThis "Executing Dashboard Management Logic." "INFO"
          ;;
       u) # Execute Account logic
-         echo "I'm a group"
+         source ${baseDir}/lib/libaccount.sh
          action='account'
          logThis "The -${option} flag was set." "DEBUG"
          logThis "Executing Account Management Logic for roles, groups, and group membership." "INFO"
          ;;
       a) # Execute Alert logic
-         echo "I'm alerting you to change alerts"
+         source ${baseDir}/lib/libalert.sh
          action='alert'
          logThis "The -${option} flag was set." "DEBUG"
          logThis "Executing Alert Management Logic." "INFO"
          ;;
       i) # Dashboard ID
          # The ID of the published Dashboard
+         source ${baseDir}/lib/libdashboard.sh
          dashboard_ID="${OPTARG}"
          logThis "The -${option} flag was set." "DEBUG"
          logThis "Received Dashboard ID for specific Dashboard Logic." "INFO"
          action='single_dashboard'
          ;;
       s) # Source Dashboard ID
+         source ${baseDir}/lib/libdashboard.sh
          source_id="${OPTARG}"
          logThis "The -${option} flag was set." "DEBUG"
          logThis "Received Source Dashboard ID for specific Dashboard Logic." "INFO"
@@ -86,7 +92,7 @@ case $action in
     ;;
 
   dashboard)
-    # Loop through dashboard files in dashboar dir
+    # Loop through dashboard files in dashboard dir
     for filename in $dashboardDir/*.json; do
       echo $dashboardDir
       logThis "Processing ${filename}" "INFO"
@@ -124,10 +130,10 @@ case $action in
       if ${CONF_dashboard_clean_tmp_files};
       then
         logThis "Cleaning up temp files" "INFO"
-        logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extenstions." "DEBUG"
+        logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
         rm -f ${responseDir}/*.clone
         rm -f ${responseDir}/*.clone.response
-        logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extenstions." "DEBUG"
+        logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
         rm -f ${sourceDir}/*.clone
         rm -f ${sourceDir}/*.clone.response
       else
@@ -142,7 +148,7 @@ case $action in
     # Let's make sure the extracted dashboard ID and the file dashboard ID match.
     if [ "${dashboardID}" = "${dashboard_ID}" ];
     then
-      # unsetting option value since the extracted value matches to free memory.
+      # un-setting option value since the extracted value matches to free memory.
       unset dashboard_ID
     else
       logThis "Extracting dashboardID from file ${1} returned value of ${dashboardID} when ${dashboard_ID} was provided." "SEVERE"
@@ -181,10 +187,10 @@ case $action in
       if ${CONF_dashboard_clean_tmp_files};
       then
         logThis "Cleaning up temp files" "INFO"
-        logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extenstions." "DEBUG"
+        logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
         rm -f ${responseDir}/*.clone
         rm -f ${responseDir}/*.clone.response
-        logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extenstions." "DEBUG"
+        logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
         rm -f ${sourceDir}/*.clone
         rm -f ${sourceDir}/*.clone.response
       else
@@ -193,7 +199,7 @@ case $action in
     ;;
   unit)
     # Becca's testing
-    # Loop through dashboard files in dashboar dir
+    # Loop through dashboard files in dashboard dir
     for filename in $dashboardDir/*.json; do
         echo $dashboardDir
         logThis "Processing ${filename}" "INFO"
@@ -231,12 +237,12 @@ case $action in
         if ${CONF_dashboard_clean_tmp_files};
         then
           logThis "Cleaning up temp files" "INFO"
-          logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extenstions." "DEBUG"
-          rm -f ${responseDir}/*.clone
-          rm -f ${responseDir}/*.clone.response
-          logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extenstions." "DEBUG"
-          rm -f ${sourceDir}/*.clone
-          rm -f ${sourceDir}/*.clone.response
+          logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
+          rm -f ${responseDir}/*.response.clone
+          rm -f ${responseDir}/*.response
+          logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
+          rm -f ${sourceDir}/*.response.clone
+          rm -f ${sourceDir}/*.response
         else
           logThis "Leaving temp files" "INFO"
         fi

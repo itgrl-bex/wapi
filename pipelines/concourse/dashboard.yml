@@ -23,8 +23,8 @@ run:
   args:
   - -exc
   - |
-    whoami
-    env
-    go version
-    find .
-    touch some-output/my-built-artifact
+    wapi.sh
+    -d 
+    
+    
+        

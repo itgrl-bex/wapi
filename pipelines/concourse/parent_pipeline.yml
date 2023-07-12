@@ -11,12 +11,12 @@ jobs:
   - get: wapi
     trigger: true
   - set_pipeline: self
-    file: wapi/pipelines/parent-pipeline.yml
+    file: wapi/pipelines/concourse/parent-pipeline.yml
 - name: configure-pipelines
   plan:
   - get: wapi
     trigger: true
     passed: [configure-self]
-  - set_pipeline: ''
-    file: wapi/pipelines/dashboard.yml
+  - set_pipeline: 'dashboard'
+    file: wapi/pipelines/concourse/dashboard.yml
     
