@@ -8,14 +8,14 @@
 
 source ${baseDir}/lib/common.sh
 
-function get_dashboardID {
+function getDashboardID {
   logThis "Retrieving dashboardID" "INFO"
   local _OUTPUT=$(jq -r '.response' $1)
   if [ -n "$_OUTPUT" ];
   then
     dashboardID=$(jq -r '.response.id' $1)
     echo $dashboardID
-    extract_response $1 $responseDir
+    extractResponse $1 $responseDir
   else
     dashboardID=$(jq -r '.id' $1)
     echo $dashboardID
@@ -24,7 +24,7 @@ function get_dashboardID {
   fi
 }
 
-function create_responseDir {
+function createResponseDir {
   logThis "Checking ${responseDir}" "INFO"
   if [ -d $responseDir ];
   then
@@ -35,8 +35,8 @@ function create_responseDir {
   fi
 }
 
-function extract_response {
-  create_responseDir
+function extractResponse {
+  createResponseDir
   logThis "Extracting JSON response body from file." "INFO"
   local _FILENAME=$(basename $1)
   logThis "Executing the command [jq -r '.response' ${1} > ${2}/${_FILENAME}.response]" "DEBUG"
@@ -44,7 +44,7 @@ function extract_response {
   logThis "Extracted JSON response body from file ${1} and storing it in the directory ${2}." "DEBUG"
 }
 
-function scrub_response {
+function scrubResponse {
   logThis "Scrubbing response to remove metadata." "INFO"
   logThis "Executing command: [cat ${1}.response | jq \"del(.disableRefreshInLiveMode) | del(.hideChartWarning) | \
   del(.creatorId) | del(.updaterId) | del(.createdEpochMillis) | del(.updatedEpochMillis) | \
@@ -62,7 +62,7 @@ function scrub_response {
   del(.favorite)" > $1  && logThis "Successfully scrubbed JSON response body." "INFO" || logThis "Could not scrub JSON response body from file ${1}.response." "CRITICAL"
 }
 
-function get_dashboard {
+function getDashboard {
   logThis "Checking dashboard retrieval output directory ${sourceDir}." "INFO"
   if [ -d $sourceDir ];
   then
@@ -78,7 +78,7 @@ function get_dashboard {
     -H "Authorization: Bearer  ${api_token}" && logThis "Successfully retrieved dashboard ${dashboardID}." "INFO" || logThis "Could not retrieve dashboard ${dashboardID}." "CRITICAL"
 }
 
-function get_workingcopy_dashboard {
+function getWorkingCopyDashboard {
   logThis "Checking dashboard retrieval output directory ${dashboardDir}." "INFO"
   if [ -d $dashboardDir ];
   then
@@ -110,7 +110,7 @@ function get_workingcopy_dashboard {
     -H "Authorization: Bearer  ${api_token}" && logThis "Successfully retrieved dashboard ${dashboardID}." "INFO" || logThis "Could not retrieve dashboard ${dashboardID}." "CRITICAL"
 }
 
-function push_dashboard {
+function pushDashboard {
   logThis "Publishing Dashboard ${dashboardID}" "INFO"
   logThis "Executing command:  [curl -X 'PUT' --data \"@${responseDir}/${dashboardID}.json\" \"${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}\" -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${api_token}]\"" "DEBUG"
   curl -X 'PUT' --data "@${responseDir}/${dashboardID}.json" \
@@ -143,3 +143,19 @@ function processCloneID {
   dashboardID=$_dashboardID
 }
 
+function setTag {
+  local result=$(curl -X 'GET' \
+  "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}/tag" \
+  -H 'accept: application/json' \
+  -H "Authorization: Bearer  ${api_token}" | jq -r '.response.items' | grep "${CONF_dashboard_published_tag}")
+  if [[ "${result}" == "  \"${CONF_dashboard_published_tag}\"" ]];
+  then
+    logThis "The published.dashboard tag is already set in the dashboard ${dashboardID}." "INFO"
+    logThis "The dashboard ${dashboardID} has tags set ${result}." "DEBUG"
+  else
+    curl -X 'PUT' "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}/tag/${CONF_dashboard_published_tag}" \
+    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${api_token}" && \
+    logThis "Successfully set tag ${CONF_dashboard_published_tag} on dashboard ${dashboardID}." "INFO" || \
+    logThis "Could not set tag ${CONF_dashboard_published_tag} on dashboard ${dashboardID}." "ERROR"
+  fi
+}

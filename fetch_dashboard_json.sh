@@ -13,7 +13,7 @@ source ${baseDir}/lib/common.sh
 source ${baseDir}/lib/libdashboard.sh
 
 ## Read Config file
-eval $(parse_yaml "${baseDir}/cfg/config.yaml" "CONF_")
+eval $(parseYAML "${baseDir}/cfg/config.yaml" "CONF_")
 dashboardDir="${baseDir}${CONF_dashboard_dir}"
 sourceDir="${baseDir}${CONF_dashboard_sourceDir}"
 responseDir="${dashboardDir}/responses"
@@ -49,7 +49,7 @@ do
     # dashboardID="USER INPUT"
     read -p "Enter DashboardID: " dashboardID
 
-    get_workingcopy_dashboard $dashboardID
+    getWorkingCopyDashboard $dashboardID
 
     echo "Completed operation.  Please see log file ${scriptLogPath} for more information."
 

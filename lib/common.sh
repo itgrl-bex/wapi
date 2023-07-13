@@ -124,7 +124,7 @@ function help {
   "
 }
 
-function parse_yaml {
+function parseYAML {
   local prefix=$2
   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
   sed -ne "s|^\($s\):|\1|" \
@@ -141,7 +141,7 @@ function parse_yaml {
   }'
 }
 
-function compare_file {
+function compareFile {
   logThis "Comparing scrubbed Dashboard files" "INFO"
   file1="${responseDir}/${1}"
   file2="${sourceDir}/${1}"
