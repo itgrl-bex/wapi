@@ -124,27 +124,28 @@ function help {
   "
 }
 
-function parseYAML {
-  local prefix=$2
-  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
-  sed -ne "s|^\($s\):|\1|" \
-       -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
-       -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
-  awk -F$fs '{
-     indent = length($1)/2;
-     vname[indent] = $2;
-     for (i in vname) {if (i > indent) {delete vname[i]}}
-     if (length($3) > 0) {
-        vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
-        printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
-     }
-  }'
+function validateYAML {
+  local _version=$(yq --version | awk '{print $4}')
+  if [[ "${_version}" == "v4"* ]];
+  then
+    echo 'Found version 4'
+    yq --exit-status 'tag == "!!map" or tag== "!!seq"' $1 > /dev/null
+  else
+    echo 'Some other version'
+    yq validate "$1" > /dev/null
+  fi
+}
+
+function validateJSON {
+  local _version=$(jq --version)
+  jq empty "${1}"
 }
 
 function compareFile {
-  logThis "Comparing scrubbed Dashboard files" "INFO"
-  file1="${responseDir}/${1}"
-  file2="${sourceDir}/${1}"
+  logThis "Comparing scrubbed files" "INFO"
+  file1="$1"
+  # source
+  file2="$2"
   if cmp -s "$file1" "$file2"; then
     logThis "The file ${file1} is the same as ${file2}." "INFO"
     printf 'The file "%s" is the same as "%s"\n'  "$file1" "$file2"
@@ -155,5 +156,181 @@ function compareFile {
     printf 'The file "%s" is different from "%s"\n' "$file1" "$file2"
     # Return 0 or true to indicate the file has changed to the calling if condition.
     return 0
+  fi
+}
+
+function getACL {
+ local id="${1}"
+ local apiType="${2}"
+ local tmpFile="${3}"
+ # Add variable validation to ensure variables are set.
+  if [ -z "${id}" ];
+  then
+    logThis "Required parameter #1 'id' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  if [ -z "${apiType}" ];
+  then
+    logThis "Required parameter #2 'apiType' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+  fi
+  logThis "Retrieving ACL for ${apiType} ${id}." "INFO"
+
+  if _result=$(curl -X 'GET' "${CONF_aria_operations_url}/api/v2/${apiType}/acl?id=${id}" -H 'accept: application/json' -H "Authorization: Bearer  ${api_token}");
+  then
+    logThis "Found published ${apiType} ${id}." "INFO"
+    echo $_result  > "${tmpFile}.result"
+    jq -r '.response' "${tmpFile}.result" | jq -r '.[]' | jq 'del(.entityId)' > "${tmpFile}"
+    rm "${tmpFile}.result"
+  else
+    logThis "Could not find published ${apiType} ${id}.  \
+    Please ensure ${apiType} ${id} exists and try again." "ERROR"
+    return 1
+  fi
+
+  if validateJSON "${tmpFile}";
+  then
+    logThis "Prepared JSON response for ${apiType} ${id} is valid." "INFO"
+    return 0
+  else
+    logThis "Prepared JSON response for ${apiType} ${id} has errors." "ERROR"
+    rm "${tmpFile}"
+    return 1
+  fi
+}
+
+function setACL {
+ local id="${1}"
+ local apiType="${2}"
+ # Add variable validation to ensure variables are set.
+  if [ -z "${id}" ];
+  then
+    logThis "Required parameter #1 'id' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  if [ -z "${apiType}" ];
+  then
+    logThis "Required parameter #2 'apiType' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+  fi
+
+  logThis "Setting ACL for ${apiType} ${id}." "INFO"
+  local tracker="acl-${dateTime}"
+  local remoteACL="${CONF_tmpDir}/${apiType}-${tracker}-${id}.json"
+  if getACL "${id}" "${apiType}" "${remoteACL}" ;
+  then
+    local _remoteModifyAcl=($(jq -r '.modifyAcl' "${remoteACL}" | jq -r '.[].id'))
+    local _modifyAcl=($(yq ".CONF.${apiType}.published.acls.modifyAcl" -o=json $config | jq -r '.[]'))
+    changed=false
+    for r in $_remoteModifyAcl;
+    do
+      if [[ ! " ${_modifyAcl[*]} " =~ " ${r} " ]];
+      then
+        logThis "Found that the published acl has value ${r} which is not present in the required modifyAcl." "INFO"
+        changed=true
+        echo "${_modifyAcl[@]}"
+      fi
+    done
+    for l in $_modifyAcl;
+    do
+      if [[ ! " ${_remoteModifyAcl[*]} " =~ " ${r} " ]];
+      then
+        logThis "Found that the published modifyACL does not have ${r} configured as is required." "INFO"
+        changed=true
+      fi
+    done
+
+    local _remoteViewAcl=($(jq -r '.viewAcl' "${remoteACL}" | jq -r '.[].id'))
+    local _viewAcl=($(yq ".CONF.${apiType}.published.acls.viewAcl" -o=json $config | jq -r '.[]'))
+    for r in $_remoteViewAcl;
+    do
+      if [[ ! " ${_viewAcl[*]} " =~ " ${r} " ]];
+      then
+        logThis "Found that the published acl has value ${r} which is not present in the required viewAcl." "INFO"
+        changed=true
+      fi
+    done
+    for l in $_viewAcl;
+    do
+      if [[ ! " ${_remoteViewAcl[*]} " =~ " ${r} " ]];
+      then
+        logThis "Found that the published viewACL does not have ${r} configured as is required." "INFO"
+        changed=true
+      fi
+    done
+  else
+    logThis "Failed to get valid JSON from published ${apiType} ${id}." "SEVERE"
+  fi
+
+  if $changed;
+  then
+    logThis "The ACLs are different, let's make them the same." "INFO"
+    local _data="[ $(yq -o json '.CONF.dashboard.published.acls' cfg/config.yaml | \
+    jq ". += { \"entityId\": \"${id}\" }" ) ]"
+
+    logThis "Executing command:  [curl -X 'PUT' -d \"${_data}\" \"${CONF_aria_operations_url}/api/v2/${apiType}/acl/set\" -H 'Accept: application/json' -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${api_token}]\"" "DEBUG"
+    curl -X 'PUT' -d "${_data}" ${CONF_aria_operations_url}/api/v2/${apiType}/acl/set -H 'Accept: application/json' -H 'Content-Type: application/json' \
+     -H "Authorization: Bearer  ${api_token}" && logThis "Successfully published ${apiType} ${id}." "INFO" || logThis "Could not publish ${apiType} ${id}." "CRITICAL"
+    rm -f "${remoteACL}"
+  fi
+
+}
+
+
+# Migrating to common function from libdashboard.sh
+function setTag {
+ local id="${1}"
+ local apiType="${2}"
+ local tag="${3}"
+ # Add variable validation to ensure variables are set.
+  if [ -z "${id}" ];
+  then
+    logThis "Required parameter #1 'id' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  if [ -z "${apiType}" ];
+  then
+    logThis "Required parameter #2 'apiType' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+  fi
+  if [ -z "${tag}" ];
+  then
+    logThis "Required parameter #3 'tag' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'api/v2/dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  local result=$(curl -X 'GET' \
+  "${CONF_aria_operations_url}/api/v2/${apiType}/${id}/tag" \
+  -H 'accept: application/json' \
+  -H "Authorization: Bearer  ${api_token}" | jq -r '.response.items' | grep "${tag}")
+  if [[ "${result}" == "  \"${tag}\"" ]];
+  then
+    logThis "The ${tag} tag is already set in the ${apiType} ${id}." "INFO"
+    logThis "The ${apiType} ${id} has tags set ${result}." "DEBUG"
+  else
+    curl -X 'PUT' "${CONF_aria_operations_url}/api/v2/${apiType}/${id}/tag/${tag}" \
+    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${api_token}" && \
+    logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO" || \
+    logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
   fi
 }

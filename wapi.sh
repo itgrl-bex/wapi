@@ -8,21 +8,30 @@
 
 # Set GLOBALS
 baseDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+config="${baseDir}/cfg/config.yaml"
+
 ## Load common functions
-source ${baseDir}/lib/common.sh
+source "${baseDir}/lib/common.sh"
 
 ## Read Config file
-eval $(parseYAML "${baseDir}/cfg/config.yaml" "CONF_")
+if validateYAML $config;
+then
+  eval $(yq -o=shell $config )
+else
+  echo 'Configuration file ${config} is not valid yaml.'
+  exit 1
+fi
+
 dashboardDir="${baseDir}${CONF_dashboard_dir}"
 sourceDir="${baseDir}${CONF_dashboard_sourceDir}"
 responseDir="${dashboardDir}/responses"
-accountDir=""
-alertDir=""
+accountDir="${baseDir}${CONF_account_dir}"
+alertDir="${baseDir}${CONF_alert_dir}"
 
 ## Logging configuration
 dateTime="`date +%Y-%m-%d` `date +%T%z`" # Date format at beginning of log entries to match RFC
 dateForFileName=`date +%Y%m%d`
-scriptLogDir="${CONF_logging_dir}"
+scriptLogDir="${CONF_logging_dir}/${CONF_app_name}"
 scriptLogPath="${scriptLogDir}/${CONF_app_name}-${dateForFileName}.log"
 scriptLoggingLevel="${CONF_logging_level}"
 # Setting api_token value
@@ -155,7 +164,7 @@ case $action in
       getDashboard $dashboardID
       extractResponse $sourceDir/$_FILENAME $sourceDir
       scrubResponse $sourceDir/$_FILENAME
-      if compareFile $_FILENAME;
+      if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME
       then
         pushDashboard $dashboardID
       fi
@@ -218,7 +227,7 @@ case $action in
       getDashboard $dashboardID
       extractResponse $sourceDir/$_FILENAME $sourceDir
       scrubResponse $sourceDir/$_FILENAME
-      if compareFile $_FILENAME;
+      if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME;
       then
         pushDashboard $dashboardID
       fi
@@ -268,13 +277,13 @@ case $action in
         getDashboard $dashboardID
         extractResponse $sourceDir/$_FILENAME $sourceDir
         scrubResponse $sourceDir/$_FILENAME
-        if compareFile $_FILENAME;
+        if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME;
         then
           pushDashboard $dashboardID
         fi
 
         # Set the published tag as per the config
-        setTag $dashboardID
+        setTag "$dashboardID" 'dashboard' "${CONF_dashboard_published_tag}"
 
         # Clean up temp files?
         if ${CONF_dashboard_clean_tmp_files};
@@ -290,7 +299,9 @@ case $action in
           logThis "Leaving temp files" "INFO"
         fi
 
+        setACL "${dashboardID}" "dashboard"
     done
+
     ;;
   *)
     echo "You forgot to tell me what to do"

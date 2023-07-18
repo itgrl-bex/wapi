@@ -116,7 +116,7 @@ function pushDashboard {
   curl -X 'PUT' --data "@${responseDir}/${dashboardID}.json" \
     "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}" \
     -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer  ${api_token}" && logThis "Successfully retrieved dashboard ${dashboardID}." "INFO" || logThis "Could not retrieve dashboard ${dashboardID}." "CRITICAL"
+    -H "Authorization: Bearer  ${api_token}" && logThis "Successfully pushed dashboard ${dashboardID}." "INFO" || logThis "Could not pushed dashboard ${dashboardID}." "CRITICAL"
 }
 
 function processCloneFileName {
@@ -143,19 +143,20 @@ function processCloneID {
   dashboardID=$_dashboardID
 }
 
-function setTag {
-  local result=$(curl -X 'GET' \
-  "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}/tag" \
-  -H 'accept: application/json' \
-  -H "Authorization: Bearer  ${api_token}" | jq -r '.response.items' | grep "${CONF_dashboard_published_tag}")
-  if [[ "${result}" == "  \"${CONF_dashboard_published_tag}\"" ]];
-  then
-    logThis "The published.dashboard tag is already set in the dashboard ${dashboardID}." "INFO"
-    logThis "The dashboard ${dashboardID} has tags set ${result}." "DEBUG"
-  else
-    curl -X 'PUT' "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}/tag/${CONF_dashboard_published_tag}" \
-    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${api_token}" && \
-    logThis "Successfully set tag ${CONF_dashboard_published_tag} on dashboard ${dashboardID}." "INFO" || \
-    logThis "Could not set tag ${CONF_dashboard_published_tag} on dashboard ${dashboardID}." "ERROR"
-  fi
-}
+# function setTag {
+#   local result=$(curl -X 'GET' \
+#   "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}/tag" \
+#   -H 'accept: application/json' \
+#   -H "Authorization: Bearer  ${api_token}" | jq -r '.response.items' | grep "${CONF_dashboard_published_tag}")
+#   if [[ "${result}" == "  \"${CONF_dashboard_published_tag}\"" ]];
+#   then
+#     logThis "The published.dashboard tag is already set in the dashboard ${dashboardID}." "INFO"
+#     logThis "The dashboard ${dashboardID} has tags set ${result}." "DEBUG"
+#   else
+#     curl -X 'PUT' "${CONF_aria_operations_url}/api/v2/dashboard/${dashboardID}/tag/${CONF_dashboard_published_tag}" \
+#     -H 'Content-Type: application/json' -H "Authorization: Bearer  ${api_token}" && \
+#     logThis "Successfully set tag ${CONF_dashboard_published_tag} on dashboard ${dashboardID}." "INFO" || \
+#     logThis "Could not set tag ${CONF_dashboard_published_tag} on dashboard ${dashboardID}." "ERROR"
+#   fi
+# }
+

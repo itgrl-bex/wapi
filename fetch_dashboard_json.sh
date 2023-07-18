@@ -8,12 +8,20 @@
 
 # Set GLOBALS
 baseDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+config="${baseDir}/cfg/config.yaml"
 ## Load common functions
 source ${baseDir}/lib/common.sh
 source ${baseDir}/lib/libdashboard.sh
 
 ## Read Config file
-eval $(parseYAML "${baseDir}/cfg/config.yaml" "CONF_")
+## Read Config file
+if validateYAML $config;
+then
+  eval $(yq -o=shell $config )
+else
+  echo 'Configuration file ${config} is not valid yaml.'
+  exit 1
+fi
 dashboardDir="${baseDir}${CONF_dashboard_dir}"
 sourceDir="${baseDir}${CONF_dashboard_sourceDir}"
 responseDir="${dashboardDir}/responses"
