@@ -125,6 +125,10 @@ function help {
 }
 
 function validateYAML {
+  if [ -z "${1}" ];
+  then
+    logThis "Required parameter #1 'filepath' missing." "SEVERE"
+  fi
   local _version=$(yq --version | awk '{print $4}')
   if [[ "${_version}" == "v4"* ]];
   then
@@ -137,6 +141,10 @@ function validateYAML {
 }
 
 function validateJSON {
+  if [ -z "${1}" ];
+  then
+    logThis "Required parameter #1 'filepath' missing." "SEVERE"
+  fi  
   local _version=$(jq --version)
   jq empty "${1}"
 }
@@ -146,6 +154,14 @@ function compareFile {
   file1="$1"
   # source
   file2="$2"
+  if [ -z "${file1}" ];
+  then
+    logThis "Required parameter #1 'filepath' of first file is missing." "SEVERE"
+  fi
+  if [ -z "${file2}" ];
+  then
+    logThis "Required parameter #2 'filepath' of second file is missing." "SEVERE"
+  fi
   if cmp -s "$file1" "$file2"; then
     logThis "The file ${file1} is the same as ${file2}." "INFO"
     printf 'The file "%s" is the same as "%s"\n'  "$file1" "$file2"
@@ -169,17 +185,26 @@ function getACL {
     logThis "Required parameter #1 'id' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
-     #3 the tag that should be set such as 'published.dashboard'" "Error"
+     #2 the apiType to query such as 'dashboard'\
+     #3 the temp file where to store the working data."
   fi
   if [ -z "${apiType}" ];
   then
     logThis "Required parameter #2 'apiType' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
-     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+     #2 the apiType to query such as 'dashboard'\
+     #3 the temp file where to store the working data."
   fi
+  if [ -z "${tmpFile}" ];
+  then
+    logThis "Required parameter #3 'tmpFile' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'dashboard'\
+     #3 the temp file where to store the working data."
+  fi
+
   logThis "Retrieving ACL for ${apiType} ${id}." "INFO"
 
   if _result=$(curl -X 'GET' "${CONF_aria_operations_url}/api/v2/${apiType}/acl?id=${id}" -H 'accept: application/json' -H "Authorization: Bearer  ${api_token}");
@@ -212,21 +237,19 @@ function setACL {
   if [ -z "${id}" ];
   then
     logThis "Required parameter #1 'id' missing." "SEVERE"
-    logThis "The function SetACL requires 3 arguments in positional order. \
+    logThis "The function SetACL requires 2 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
-     #3 the tag that should be set such as 'published.dashboard'" "Error"
+     #2 the apiType to query such as 'dashboard'" "Error"
   fi
   if [ -z "${apiType}" ];
   then
     logThis "Required parameter #2 'apiType' missing." "SEVERE"
-    logThis "The function SetACL requires 3 arguments in positional order. \
+    logThis "The function SetACL requires 2 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
-     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+     #2 the apiType to query such as 'dashboard'" "Error"
   fi
 
-  logThis "Setting ACL for ${apiType} ${id}." "INFO"
+  logThis "Checking ACL for ${apiType} ${id}." "INFO"
   local tracker="acl-${dateTime}"
   local remoteACL="${CONF_tmpDir}/${apiType}-${tracker}-${id}.json"
   if getACL "${id}" "${apiType}" "${remoteACL}" ;
@@ -240,7 +263,6 @@ function setACL {
       then
         logThis "Found that the published acl has value ${r} which is not present in the required modifyAcl." "INFO"
         changed=true
-        echo "${_modifyAcl[@]}"
       fi
     done
     for l in $_modifyAcl;
@@ -276,7 +298,7 @@ function setACL {
 
   if $changed;
   then
-    logThis "The ACLs are different, let's make them the same." "INFO"
+    logThis "The ACLs are different, setting ACL to configured ACL." "INFO"
     local _data="[ $(yq -o json '.CONF.dashboard.published.acls' cfg/config.yaml | \
     jq ". += { \"entityId\": \"${id}\" }" ) ]"
 
@@ -287,7 +309,6 @@ function setACL {
   fi
 
 }
-
 
 # Migrating to common function from libdashboard.sh
 function setTag {
@@ -300,7 +321,7 @@ function setTag {
     logThis "Required parameter #1 'id' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
+     #2 the apiType to query such as 'dashboard'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"
   fi
   if [ -z "${apiType}" ];
@@ -308,7 +329,7 @@ function setTag {
     logThis "Required parameter #2 'apiType' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
+     #2 the apiType to query such as 'dashboard'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"  
   fi
   if [ -z "${tag}" ];
@@ -316,7 +337,7 @@ function setTag {
     logThis "Required parameter #3 'tag' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'api/v2/dashboard'\
+     #2 the apiType to query such as 'dashboard'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"
   fi
   local result=$(curl -X 'GET' \
@@ -332,5 +353,66 @@ function setTag {
     -H 'Content-Type: application/json' -H "Authorization: Bearer  ${api_token}" && \
     logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO" || \
     logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
+  fi
+}
+
+function searchTag {
+  local apiType=$1
+  local tag=$2
+  if [ -z "${apiType}" ];
+  then
+    logThis "Required parameter #1 'apiType' missing." "SEVERE"
+    logThis "The function searchTag requires 2 arguments in positional order. \
+     #1 the apiType to query such as 'dashboard'\
+     #2 the tag that should be searched such as 'published.dashboard'" "Error"
+  fi
+  if [ -z "${tag}" ];
+  then
+    logThis "Required parameter #2 'tag' missing." "SEVERE"
+    logThis "The function searchTag requires 2 arguments in positional order. \
+     #1 the apiType to query such as 'dashboard'\
+     #2 the tag that should be searched such as 'published.dashboard'" "Error"
+  fi  
+  curl -X 'POST' \
+    "${CONF_aria_operations_url}/api/v2/search/${apiType}" \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer  ${api_token}" \
+    -d "{
+    \"limit\": 1000,
+    \"offset\": 0,
+    \"query\": [
+      {
+        \"key\": \"tags.customerTags\",
+        \"value\": \"string\",
+        \"values\": [
+          \"${tag}\"
+        ],
+        \"matchingMethod\": \"CONTAINS\",
+        \"negated\": false,
+        \"start\": 0,
+        \"end\": 0
+      }
+    ],
+    \"sort\": {
+      \"ascending\": true,
+      \"field\": \"id\"
+    }
+  }" | jq -r '.response.items' | jq -r '.[].id'
+}
+
+function createDir {
+  local dir="${1}"
+  if [ -z "${dir}" ];
+  then
+    logThis "Required parameter 'directoryPath' missing." "SEVERE"
+  fi
+  logThis "Checking ${dir}" "INFO"
+  if [ -d $dir ];
+  then
+    logThis "Directory ${dir} exists" "DEBUG"
+  else
+    logThis "Executing the command[mkdir ${dir}]" "DEBUG"
+    mkdir -p $dir && logThis "Successfully created ${dir}." "INFO" || logThis "Error creating directory ${dir}." "CRITICAL"
   fi
 }

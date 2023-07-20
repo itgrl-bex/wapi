@@ -2,7 +2,7 @@
 
 ############################################################
 #
-#
+# To be executed by concourse pipelines after merge 
 #
 ############################################################
 
@@ -22,11 +22,24 @@ else
   exit 1
 fi
 
-dashboardDir="${baseDir}${CONF_dashboard_dir}"
-sourceDir="${baseDir}${CONF_dashboard_sourceDir}"
-responseDir="${dashboardDir}/responses"
-accountDir="${baseDir}${CONF_account_dir}"
-alertDir="${baseDir}${CONF_alert_dir}"
+# If data_path is set in the config, use it.
+# Otherwise use the script base directory of ${baseDir}
+
+if [[ -z "${CONF_data_path}" ]];
+then
+  dashboardDir="${baseDir}/${CONF_dashboard_dir}"
+  sourceDir="${baseDir}/${CONF_dashboard_sourceDir}"
+  responseDir="${dashboardDir}/responses"
+  accountDir="${baseDir}/${CONF_account_dir}"
+  alertDir="${baseDir}/${CONF_alert_dir}"
+else
+  createDir "${CONF_data_path}"
+  dashboardDir="${CONF_data_path}${CONF_dashboard_dir}"
+  sourceDir="${CONF_data_path}${CONF_dashboard_sourceDir}"
+  responseDir="${dashboardDir}/responses"
+  accountDir="${CONF_data_path}${CONF_account_dir}"
+  alertDir="${CONF_data_path}${CONF_alert_dir}"
+fi
 
 ## Logging configuration
 dateTime="`date +%Y-%m-%d` `date +%T%z`" # Date format at beginning of log entries to match RFC
@@ -45,43 +58,42 @@ fi
 while getopts "bdua :hi:s:t:" option; do
    case $option in
       b) # Becca's test code
-          source ${baseDir}/lib/libdashboard.sh
-          source ${baseDir}/lib/libalert.sh
-          source ${baseDir}/lib/libaccount.sh
           action=unit
+          actionCode="${baseDir}/lib/actionUnit.sh"
           ;;
       d) # Execute Dashboard logic
-          source ${baseDir}/lib/libdashboard.sh
           action='dashboard'
+          actionCode="${baseDir}/lib/actionDashboard.sh"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Executing Dashboard Management Logic." "INFO"
           ;;
       u) # Execute Account logic
-          source ${baseDir}/lib/libaccount.sh
           action='account'
+          actionCode="${baseDir}/lib/actionAccount.sh"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Executing Account Management Logic for roles, groups, and group membership." "INFO"
           ;;
       a) # Execute Alert logic
-          source ${baseDir}/lib/libalert.sh
           action='alert'
+          actionCode="${baseDir}/lib/actionAlert.sh"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Executing Alert Management Logic." "INFO"
           ;;
       i) # Dashboard ID
-          # The ID of the published Dashboard
-          source ${baseDir}/lib/libdashboard.sh
+          # The ID of the Dashboard to publish
+          action='single_dashboard'
+          actionCode="${baseDir}/lib/actionSingleDashboard.sh"
           dashboard_ID="${OPTARG}"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Received Dashboard ID for specific Dashboard Logic." "INFO"
-          action='single_dashboard'
           ;;
       s) # Source Dashboard ID
-          source ${baseDir}/lib/libdashboard.sh
+          # The ID of the published Dashboard
+          action='single_dashboard'
+          actionCode="${baseDir}/lib/actionSingleDashboard.sh"
           source_id="${OPTARG}"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Received Source Dashboard ID for specific Dashboard Logic." "INFO"
-          action='single_dashboard'
           ;;
       t) # API Token
           logThis "Overriding the config file API token values." "INFO"
@@ -117,6 +129,7 @@ case $action in
       api_token=$CONF_account_api_token
       unset CONF_aria_api_token
     fi
+    source $actionCode 
     ;;
 
   alert)
@@ -126,6 +139,7 @@ case $action in
       api_token=$CONF_alert_api_token
       unset CONF_aria_api_token
     fi
+    source $actionCode
     ;;
 
   dashboard)
@@ -134,55 +148,7 @@ case $action in
       api_token=$CONF_dashboard_api_token
       unset CONF_dashboard_api_token
     fi
-
-    # Loop through dashboard files in dashboard dir
-    for filename in $dashboardDir/*.json; do
-      echo $dashboardDir
-      logThis "Processing ${filename}" "INFO"
-      _FILENAME=$(basename $filename)
-      getDashboardID $filename
-      if [[ "${_FILENAME}" == *"-Clone-"* ]];
-      then
-        logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-        processCloneFileName $_FILENAME
-        # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-        processCloneID $_FILENAME
-      else
-        if [[ "${dashboardID}" == *"-Clone-"* ]];
-        then
-          logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-          processCloneID $_FILENAME
-        else
-          echo "Not a clone."
-          echo $_FILENAME
-          echo $dashboardID
-        fi
-      fi
-
-      scrubResponse $responseDir/$_FILENAME
-
-      getDashboard $dashboardID
-      extractResponse $sourceDir/$_FILENAME $sourceDir
-      scrubResponse $sourceDir/$_FILENAME
-      if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME
-      then
-        pushDashboard $dashboardID
-      fi
-
-      # Clean up temp files?
-      if ${CONF_dashboard_clean_tmp_files};
-      then
-        logThis "Cleaning up temp files" "INFO"
-        logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
-        rm -f ${responseDir}/*.clone
-        rm -f ${responseDir}/*.clone.response
-        logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
-        rm -f ${sourceDir}/*.clone
-        rm -f ${sourceDir}/*.clone.response
-      else
-        logThis "Leaving temp files" "INFO"
-      fi
-    done
+    source $actionCode
     ;;
 
   single_dashboard)
@@ -191,118 +157,14 @@ case $action in
       api_token=$CONF_dashboard_api_token
       unset CONF_dashboard_api_token
     fi
-
-    _FILENAME="${dashboardID}.json"
-    getDashboardID $_FILENAME 
-    # Let's make sure the extracted dashboard ID and the file dashboard ID match.
-    if [[ "${dashboardID}" == "${dashboard_ID}" ]];
-    then
-      # un-setting option value since the extracted value matches to free memory.
-      unset dashboard_ID
-    else
-      logThis "Extracting dashboardID from file ${1} returned value of ${dashboardID} when ${dashboard_ID} was provided." "SEVERE"
-    fi
-
-    # Process Clone tags in name, Dashboard ID, and URL
-    if [[ "${_FILENAME}" == *"-Clone-"* ]];
-    then
-      logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-      processCloneFileName $_FILENAME
-      # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-      processCloneID $_FILENAME
-    else
-      if [[ "${dashboardID}" == *"-Clone-"* ]];
-      then
-        logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-        processCloneID $_FILENAME
-      else
-        echo "Not a clone."
-        echo $_FILENAME
-        echo $dashboardID
-      fi
-    fi
-
-      scrubResponse $responseDir/$_FILENAME
-
-      getDashboard $dashboardID
-      extractResponse $sourceDir/$_FILENAME $sourceDir
-      scrubResponse $sourceDir/$_FILENAME
-      if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME;
-      then
-        pushDashboard $dashboardID
-      fi
-
-      # Clean up temp files?
-      if ${CONF_dashboard_clean_tmp_files};
-      then
-        logThis "Cleaning up temp files" "INFO"
-        logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
-        rm -f ${responseDir}/*.clone
-        rm -f ${responseDir}/*.clone.response
-        logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
-        rm -f ${sourceDir}/*.clone
-        rm -f ${sourceDir}/*.clone.response
-      else
-        logThis "Leaving temp files" "INFO"
-      fi
+    source $actionCode
     ;;
+
   unit)
-    # Becca's testing
-    # Loop through dashboard files in dashboard dir
-    for filename in $dashboardDir/*.json; do
-        echo $dashboardDir
-        logThis "Processing ${filename}" "INFO"
-        _FILENAME=$(basename $filename)
-        getDashboardID $filename
-        if [[ "${_FILENAME}" == *"-Clone-"* ]];
-        then
-          logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-          processCloneFileName $_FILENAME
-          # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-          processCloneID $_FILENAME
-        else
-          if [[ "${dashboardID}" == *"-Clone-"* ]];
-          then
-            logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-            processCloneID $_FILENAME
-          else
-            echo "Not a clone."
-            echo $_FILENAME
-            echo $dashboardID
-          fi
-        fi
-
-        scrubResponse $responseDir/$_FILENAME
-
-        getDashboard $dashboardID
-        extractResponse $sourceDir/$_FILENAME $sourceDir
-        scrubResponse $sourceDir/$_FILENAME
-        if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME;
-        then
-          pushDashboard $dashboardID
-        fi
-
-        # Set the published tag as per the config
-        setTag "$dashboardID" 'dashboard' "${CONF_dashboard_published_tag}"
-
-        # Clean up temp files?
-        if ${CONF_dashboard_clean_tmp_files};
-        then
-          logThis "Cleaning up temp files" "INFO"
-          logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
-          rm -f ${responseDir}/*.response.clone
-          rm -f ${responseDir}/*.response
-          logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
-          rm -f ${sourceDir}/*.response.clone
-          rm -f ${sourceDir}/*.response
-        else
-          logThis "Leaving temp files" "INFO"
-        fi
-
-        setACL "${dashboardID}" "dashboard"
-    done
-
+    echo "Executing external action code actionUnit.sh"
+    source $actionCode
     ;;
+
   *)
     echo "You forgot to tell me what to do"
     help
