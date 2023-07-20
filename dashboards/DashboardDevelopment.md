@@ -47,6 +47,50 @@ and then follow it with a short description of the change.
    3. Do not make changes related to other issues in this feature branch.
 5. Ensure that you are in the feature branch that you just created on your development workstation.
 
+## Dashboard editing
+
+### Create a new Dashboard
+
+   1. Log in to your service instance (https://<your_instance>.wavefront.com) as a user with the API Tokens permission.
+   2. Click `Dashboards` in the top left.
+      1. In the dropdown click `Create Dashboard`.
+      2. Name the dashboard by entering a name in the upper left.
+   3. Make all the required edits to your working copy of the dashboard.
+   4. Test the dashboard functionality.
+   5. Optimize your slow queries.
+   6. Test again and repeat as necessary.
+   7. Save the dashboard.
+   8. When ready to publish the dashboard:
+      1. After publishing, all edits must follow the workflow `Edit a published Dashboard`.
+      2. Click `Dashboards` in the top left.
+         1. In the dropdown click `All Dashboards`.
+      3. Search for your dashboard but do not open it.
+      4. Check the box next to your dashboard.
+      5. Click on `+ Tag` just under the search bar.
+      6. Choose or create the tag to publish the dashboard.
+         1. This tag is a configurable item.
+         2. The default tag is `published.dashboard`
+   9. You're done, and the pipeline will modify the ACLs.
+
+### Edit a published Dashboard
+
+Create and change your working copy of the dashboard:
+
+   1. Log in to your service instance (https://<your_instance>.wavefront.com) as a user with the API Tokens permission.
+   2. Navigate to the dashboard that you wish to change.
+   3. Click the &#8942;
+   4. Click Clone.
+   5. The name field should end in (Clone)
+   6. The url should end in -Clone
+      1. You can optionally set an identifier such as -Clone-1
+      2. The URL you set here will be the dashboardID of your working copy.
+   7. Make all the required edits to your working copy of the dashboard.
+   8. Save the dashboard.
+   9. Test the dashboard functionality.
+   10. Optimize your slow queries.
+   11. Test again and repeat as necessary.
+   12. You're ready to publish your changes.
+
 ## Retrieve the work that you have done in the SAAS visual editor
 
 ### Getting your API Token

@@ -96,7 +96,7 @@ function getWorkingCopyDashboard {
   then
     logThis "Directory ${dashboardDir} exists." "DEBUG"
   else
-    mkdir -p $dashboardDir && logThis "Successfully created ${dashboardDir}." "INFO" || logThis "Error creating directory ${dashboardDir}." "CRITICAL"
+    mkdir -p$dashboardDir && logThis "Successfully created ${dashboardDir}." "INFO" || logThis "Error creating directory ${dashboardDir}." "CRITICAL"
   fi
   if [ -f $dashboardDir/$dashboardID.json ];
   then
@@ -134,7 +134,7 @@ function pushDashboard {
 function processCloneFileName {
   logThis "Stripping working copy Clone tags from filename ${1} before publishing." "INFO"
   echo 'file process'
-  newFILENAME=$(echo $_FILENAME | awk -F '-Clone-' '{print $1}').json
+  newFILENAME=$(echo $_FILENAME | awk -F '-Clone' '{print $1}').json
   logThis "Rename the file ${responseDir}/${_FILENAME}.response to ${responseDir}/${newFILENAME}.response" "INFO"
   echo $_FILENAME
   echo $newFILENAME
@@ -146,7 +146,7 @@ function processCloneFileName {
 
 function processCloneID {
   logThis "Stripping working copy Clone tags from file ${1} before publishing." "INFO"
-  local _dashboardID=$(echo $dashboardID | awk -F '-Clone-' '{print $1}')
+  local _dashboardID=$(echo $dashboardID | awk -F '-Clone' '{print $1}')
   logThis "Changing (dashboardID) in file from ${dashboardID} to ${_dashboardID} in file $_FILENAME." "DEBUG"
   sed -i '.clone' "s/${dashboardID}/${_dashboardID}/g" $responseDir/$_FILENAME.response
   logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"

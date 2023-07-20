@@ -22,14 +22,14 @@ for filename in $dashboardDir/*.json; do
   logThis "Processing ${filename}" "INFO"
   _FILENAME=$(basename $filename)
   getDashboardID $filename
-  if [[ "${_FILENAME}" == *"-Clone-"* ]];
+  if [[ "${_FILENAME}" == *"-Clone"* ]];
   then
     logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
     processCloneFileName $_FILENAME
     # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
     processCloneID $_FILENAME
   else
-    if [[ "${dashboardID}" == *"-Clone-"* ]];
+    if [[ "${dashboardID}" == *"-Clone"* ]];
     then
       logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
       processCloneID $_FILENAME
