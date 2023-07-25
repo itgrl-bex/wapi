@@ -1,0 +1,210 @@
+---
+CONF:
+  appName: 'wapi'
+  # dataPath config item is optional and if not present, the focus area directories \
+  # such as account.dir and dashboard.dir values will be prepended with the base directory \
+  # of the script wapi.sh
+  # Example: dataPath: '/opt/wapi_data/'
+  dataPath: ''
+  # Optionally set web proxy
+  # proxy:
+  #   https: 
+  #   http: 
+  #   no_proxy: 
+  
+  # Globally cleanup tmp files from processing comparisons and changes 
+  # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
+  cleanTmpFiles: true
+
+  git:
+    data:
+      path:
+      repo:
+      ssh_key:
+      single_change: true
+      branch:
+        name_format:
+        commit_message:
+      issue:
+        template:
+        subject:
+      pull_request:
+        template:
+        subject:
+    code:
+      path:
+      repo:
+      ssh_key:
+      issue:
+        template:
+        subject:
+      pull_request:
+        template:
+        subject:
+
+  aria:
+    svcAccount: 'sa::example-dashboards-gitops'
+    apiToken: '4example-th1s-ismy-d3m0-apitoken4u2c'
+    operationsUrl: 'https://vmware.wavefront.com'
+    # New owner of found orphans
+    orphanage:
+      owner:
+      tag: 'found.orphan'
+      acls:
+        viewAcl:
+          - # Group or User ID
+          - "3v3ryone-2is2-able-todo-thisACLactio"
+        modifyAcl:
+          - # Group or User ID
+          - "4service-user-acct-todo-thisACLactio"
+    # New owner of owned items for deactivated/deleted users
+    userDelete:
+      owner:
+      tag: 'found.orphan'
+      acls:
+        viewAcl:
+          - # Group or User ID
+          - "3v3ryone-2is2-able-todo-thisACLactio"
+        modifyAcl:
+          - # Group or User ID
+          - "4service-user-acct-todo-thisACLactio"
+
+  account: 
+    dir: '/account'
+    # Config option allows to set API token specific for each function.
+    # apiToken: ''
+    # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
+    # cleanTmpFiles: true
+    published:
+      tag: 'published.account'
+      # Optional to include ACLs for account functions
+      acls:
+        viewAcl:
+          - # Group or User ID
+          - "3v3ryone-2is2-able-todo-thisACLactio"
+        modifyAcl:
+          - # Group or User ID
+          - "4service-user-acct-todo-thisACLactio"
+    # Optional: set the new owner of found orphans for account objects
+    # orphanage:
+    #   owner:
+    #   tag: 'found.orphan'
+    #   acls:
+    #     viewAcl:
+    #       - # Group or User ID
+    #       - "3v3ryone-2is2-able-todo-thisACLactio"
+    #     modifyAcl:
+    #       - # Group or User ID
+    #       - "4service-user-acct-todo-thisACLactio"
+    # Optional: set the new owner of owned items for account items of deactivated/deleted users
+    # userDelete:
+    #   owner:
+    #   tag: 'found.orphan'
+    #   acls:
+    #     viewAcl:
+    #       - # Group or User ID
+    #       - "3v3ryone-2is2-able-todo-thisACLactio"
+    #     modifyAcl:
+    #       - # Group or User ID
+    #       - "4service-user-acct-todo-thisACLactio"
+
+  alert:
+    dir: '/alert'
+    # Config option allows to set API token specific for each function.
+    # apiToken: ''
+    # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
+    # cleanTmpFiles: true
+    published:
+      tag: 'published.alert'
+      # Optional to include ACLs for Alert functions
+      acls:
+        viewAcl:
+          - # Group or User ID
+          - "3v3ryone-2is2-able-todo-thisACLactio"
+        modifyAcl:
+          - # Group or User ID
+          - "4service-user-acct-todo-thisACLactio"
+    # Optional: set the new owner of found orphans for account objects
+    # orphanage:
+    #   owner:
+    #   tag: 'found.orphan'
+    #   acls:
+    #     viewAcl:
+    #       - # Group or User ID
+    #       - "3v3ryone-2is2-able-todo-thisACLactio"
+    #     modifyAcl:
+    #       - # Group or User ID
+    #       - "4service-user-acct-todo-thisACLactio"
+    # Optional: set the new owner of owned items for account items of deactivated/deleted users
+    # userDelete:
+    #   owner:
+    #   tag: 'found.orphan'
+    #   acls:
+    #     viewAcl:
+    #       - # Group or User ID
+    #       - "3v3ryone-2is2-able-todo-thisACLactio"
+    #     modifyAcl:
+    #       - # Group or User ID
+    #       - "4service-user-acct-todo-thisACLactio"
+
+  dashboard:
+    dir: '/dashboards'
+    # Config option allows to set API token specific for each function.
+    # apiToken: ''
+    sourceDir: '/dashboards/source'
+    # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
+    # cleanTmpFiles: true
+    staged:
+      workingDir: '/staged/dashboards'
+      tag: 'staged.dashboard'
+      delete:
+        branch: false
+        published:
+          enabled: false
+          tag:
+            flagForDelete: 'pipeline.delete.dashboard'
+          retainDays: 7
+          modifyAcl: true
+    published:
+      tag: 'published.dashboard'
+      acls:
+        viewAcl:
+          - # Group or User ID
+          - "3v3ryone-2is2-able-todo-thisACLactio"
+        modifyAcl:
+          - # Group or User ID
+          - "4service-user-acct-todo-thisACLactio"
+    # Optional: set the new owner of found orphans for account objects
+    # orphanage:
+    #   owner:
+    #   tag: 'found.orphan'
+    #   acls:
+    #     viewAcl:
+    #       - # Group or User ID
+    #       - "3v3ryone-2is2-able-todo-thisACLactio"
+    #     modifyAcl:
+    #       - # Group or User ID
+    #       - "4service-user-acct-todo-thisACLactio"
+    # Optional: set the new owner of owned items for account items of deactivated/deleted users
+    # userDelete:
+    #   owner:
+    #   tag: 'found.orphan'
+    #   acls:
+    #     viewAcl:
+    #       - # Group or User ID
+    #       - "3v3ryone-2is2-able-todo-thisACLactio"
+    #     modifyAcl:
+    #       - # Group or User ID
+    #       - "4service-user-acct-todo-thisACLactio"
+
+  logging:
+    # Logging Level configuration works as follows:
+    # DEBUG - Provides all logging output
+    # INFO  - Provides all but debug messages
+    # WARN  - Provides all but debug and info
+    # ERROR - Provides all but debug, info and warn
+    #
+    # SEVERE and CRITICAL are also supported levels as extremes of ERROR
+    # SEVERE and CRITICAL will exit the program and log the exit
+    level: 'WARN'
+    dir: "/var/log/wapi/"

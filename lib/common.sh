@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #################################################################################
 # SCRIPT LOGGING CONFIGURATION
 #
@@ -103,7 +105,7 @@ function logThis() {
 }
 
 function help {
-  echo "Usage: $0 [ -i dashboardID ] [ -s SOURCE_dashboardID ] [ -t API_TOKEN ]" 1>&2 
+  echo "Usage: $0 [ -i dashboardID ] [ -s SOURCE_dashboardID ] [ -t apiToken ]" 1>&2 
   echo "
     A single option of -d is required for task to work and app will cycle through dashboards \
     and compare with existing version. If changes are detected, then the app will push copy \
@@ -129,14 +131,15 @@ function validateYAML {
   then
     logThis "Required parameter #1 'filepath' missing." "SEVERE"
   fi
-  local _version=$(yq --version | awk '{print $4}')
+  local _version
+  _version=$(yq --version | awk '{print $4}')
   if [[ "${_version}" == "v4"* ]];
   then
     echo 'Found version 4'
-    yq --exit-status 'tag == "!!map" or tag== "!!seq"' $1 > /dev/null
+    yq --exit-status 'tag == "!!map" or tag== "!!seq"' "${1}" > /dev/null
   else
     echo 'Some other version'
-    yq validate "$1" > /dev/null
+    yq validate "${1}" > /dev/null
   fi
 }
 
@@ -145,7 +148,8 @@ function validateJSON {
   then
     logThis "Required parameter #1 'filepath' missing." "SEVERE"
   fi  
-  local _version=$(jq --version)
+  local _version
+  _version=$(jq --version)
   jq empty "${1}"
 }
 
@@ -207,10 +211,10 @@ function getACL {
 
   logThis "Retrieving ACL for ${apiType} ${id}." "INFO"
 
-  if _result=$(curl -X 'GET' "${CONF_aria_operations_url}/api/v2/${apiType}/acl?id=${id}" -H 'accept: application/json' -H "Authorization: Bearer  ${api_token}");
+  if _result=$(curl -X 'GET' "${CONF_aria_operationsUrl}/api/v2/${apiType}/acl?id=${id}" -H 'accept: application/json' -H "Authorization: Bearer  ${apiToken}");
   then
     logThis "Found published ${apiType} ${id}." "INFO"
-    echo $_result  > "${tmpFile}.result"
+    echo "${_result}"  > "${tmpFile}.result"
     jq -r '.response' "${tmpFile}.result" | jq -r '.[]' | jq 'del(.entityId)' > "${tmpFile}"
     rm "${tmpFile}.result"
   else
@@ -265,9 +269,9 @@ function setACL {
         changed=true
       fi
     done
-    for l in $_modifyAcl;
+    for r in "${_modifyAcl[@]}";
     do
-      if [[ ! " ${_remoteModifyAcl[*]} " =~ " ${r} " ]];
+      if [[ ! " ${_remoteModifyAcl[*]} " =~ ${r} ]];
       then
         logThis "Found that the published modifyACL does not have ${r} configured as is required." "INFO"
         changed=true
@@ -276,17 +280,17 @@ function setACL {
 
     local _remoteViewAcl=($(jq -r '.viewAcl' "${remoteACL}" | jq -r '.[].id'))
     local _viewAcl=($(yq ".CONF.${apiType}.published.acls.viewAcl" -o=json $config | jq -r '.[]'))
-    for r in $_remoteViewAcl;
+    for r in ${_remoteViewAcl[*]};
     do
-      if [[ ! " ${_viewAcl[*]} " =~ " ${r} " ]];
+      if [[ ! " ${_viewAcl[*]} " =~ ${r} ]];
       then
         logThis "Found that the published acl has value ${r} which is not present in the required viewAcl." "INFO"
         changed=true
       fi
     done
-    for l in $_viewAcl;
+    for r in ${_viewAcl};
     do
-      if [[ ! " ${_remoteViewAcl[*]} " =~ " ${r} " ]];
+      if [[ ! " ${_remoteViewAcl[*]} " =~ ${r} ]];
       then
         logThis "Found that the published viewACL does not have ${r} configured as is required." "INFO"
         changed=true
@@ -302,15 +306,15 @@ function setACL {
     local _data="[ $(yq -o json '.CONF.dashboard.published.acls' cfg/config.yaml | \
     jq ". += { \"entityId\": \"${id}\" }" ) ]"
 
-    logThis "Executing command:  [curl -X 'PUT' -d \"${_data}\" \"${CONF_aria_operations_url}/api/v2/${apiType}/acl/set\" -H 'Accept: application/json' -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${api_token}]\"" "DEBUG"
-    curl -X 'PUT' -d "${_data}" ${CONF_aria_operations_url}/api/v2/${apiType}/acl/set -H 'Accept: application/json' -H 'Content-Type: application/json' \
-     -H "Authorization: Bearer  ${api_token}" && logThis "Successfully published ${apiType} ${id}." "INFO" || logThis "Could not publish ${apiType} ${id}." "CRITICAL"
+    logThis "Executing command:  [curl -X 'PUT' -d \"${_data}\" \"${CONF_aria_operationsUrl}/api/v2/${apiType}/acl/set\" -H 'Accept: application/json' -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
+    curl -X 'PUT' -d "${_data}" ${CONF_aria_operationsUrl}/api/v2/${apiType}/acl/set -H 'Accept: application/json' -H 'Content-Type: application/json' \
+     -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully published ${apiType} ${id}." "INFO" || logThis "Could not publish ${apiType} ${id}." "CRITICAL"
     rm -f "${remoteACL}"
   fi
 
 }
 
-# Migrating to common function from libdashboard.sh
+# Migrating to common function from libDashboard.sh
 function setTag {
  local id="${1}"
  local apiType="${2}"
@@ -340,17 +344,18 @@ function setTag {
      #2 the apiType to query such as 'dashboard'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"
   fi
-  local result=$(curl -X 'GET' \
-  "${CONF_aria_operations_url}/api/v2/${apiType}/${id}/tag" \
+  local result
+  result=$(curl -X 'GET' \
+  "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag" \
   -H 'accept: application/json' \
-  -H "Authorization: Bearer  ${api_token}" | jq -r '.response.items' | grep "${tag}")
+  -H "Authorization: Bearer  ${apiToken}" | jq -r '.response.items' | grep "${tag}")
   if [[ "${result}" == "  \"${tag}\"" ]];
   then
     logThis "The ${tag} tag is already set in the ${apiType} ${id}." "INFO"
     logThis "The ${apiType} ${id} has tags set ${result}." "DEBUG"
   else
-    curl -X 'PUT' "${CONF_aria_operations_url}/api/v2/${apiType}/${id}/tag/${tag}" \
-    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${api_token}" && \
+    curl -X 'PUT' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag/${tag}" \
+    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${apiToken}" && \
     logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO" || \
     logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
   fi
@@ -374,10 +379,10 @@ function searchTag {
      #2 the tag that should be searched such as 'published.dashboard'" "Error"
   fi  
   curl -X 'POST' \
-    "${CONF_aria_operations_url}/api/v2/search/${apiType}" \
+    "${CONF_aria_operationsUrl}/api/v2/search/${apiType}" \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer  ${api_token}" \
+    -H "Authorization: Bearer  ${apiToken}" \
     -d "{
     \"limit\": 1000,
     \"offset\": 0,
@@ -401,6 +406,52 @@ function searchTag {
   }" | jq -r '.response.items' | jq -r '.[].id'
 }
 
+function removeTag {
+ local id="${1}"
+ local apiType="${2}"
+ local tag="${3}"
+ # Add variable validation to ensure variables are set.
+  if [ -z "${id}" ];
+  then
+    logThis "Required parameter #1 'id' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  if [ -z "${apiType}" ];
+  then
+    logThis "Required parameter #2 'apiType' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+  fi
+  if [ -z "${tag}" ];
+  then
+    logThis "Required parameter #3 'tag' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  local result
+  result=$(curl -X 'GET' \
+  "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag" \
+  -H 'accept: application/json' \
+  -H "Authorization: Bearer  ${apiToken}" | jq -r '.response.items' | grep "${tag}")
+  if [[ "${result}" == "  \"${tag}\"" ]];
+  then
+    logThis "The ${tag} tag is already set in the ${apiType} ${id}." "INFO"
+    logThis "The ${apiType} ${id} has tags set ${result}." "DEBUG"
+  else
+    curl -X 'PUT' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag/${tag}" \
+    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${apiToken}" && \
+    logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO" || \
+    logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
+  fi
+}
+
 function createDir {
   local dir="${1}"
   if [ -z "${dir}" ];
@@ -416,3 +467,4 @@ function createDir {
     mkdir -p $dir && logThis "Successfully created ${dir}." "INFO" || logThis "Error creating directory ${dir}." "CRITICAL"
   fi
 }
+

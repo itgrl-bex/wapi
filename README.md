@@ -19,14 +19,14 @@ Common settings to update will be the settings identified below:
 
 ```yaml
 aria:
-  svc_account: 'sa::example-dashboards-gitops'
-  api_token: '4example-th1s-ismy-d3m0-apitoken4u2c'
-  operations_url: 'https://vmware.wavefront.com'
+  svcAccount: 'sa::example-dashboards-gitops'
+  apiToken: '4example-th1s-ismy-d3m0-apitoken4u2c'
+  operationsUrl: 'https://vmware.wavefront.com'
 ```
 
 ## Dashboard Development
 
-For additional information on developing dashboards with this workflow, please see [Dashboard Development](dashboards/DashboardDevelopment.md).
+For additional information on developing dashboards with this workflow, please see [Dashboard Development](dashboards/DASHBOARDDEVELOPMENT.md).
 
 ## `wapi.sh` Usage
 
@@ -48,10 +48,4 @@ These optional flags require arguments
 
 ## Pipelines
 
-At this time the pipelines directory is present and will house the concourse pipelines. The
-pipelines are just rough templates at this time and will be filled out more as the
-functionality evolves of the application.
-
-### Concourse Pipelines
-
-Concourse pipelines are in the `pipelines/concourse` directory of this repository.
+To learn more about pipelines for this repository, please see [Pipelines](pipelines/PIPELINES.md).

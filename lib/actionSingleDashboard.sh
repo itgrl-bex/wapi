@@ -12,12 +12,12 @@
 
 
 ## Load common functions
-source "${baseDir}/lib/common.sh"
+source common.sh
 
-source ${baseDir}/lib/libdashboard.sh
+source libDashboard.sh
 
 _FILENAME="${dashboardID}.json"
-getDashboardID $_FILENAME 
+getDashboardID ${_FILENAME} 
 # Let's make sure the extracted dashboard ID and the file dashboard ID match.
 if [[ "${dashboardID}" == "${dashboard_ID}" ]];
 then
@@ -31,41 +31,41 @@ fi
 if [[ "${_FILENAME}" == *"-Clone-"* ]];
 then
   logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-  processCloneFileName $_FILENAME
+  processCloneFileName "${_FILENAME}"
   # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-  processCloneID $_FILENAME
+  processCloneID "${_FILENAME}"
 else
   if [[ "${dashboardID}" == *"-Clone-"* ]];
   then
     logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-    processCloneID $_FILENAME
+    processCloneID "${_FILENAME}"
   else
     echo "Not a clone."
-    echo $_FILENAME
-    echo $dashboardID
+    echo "${_FILENAME}"
+    echo "${dashboardID}"
   fi
 fi
 
-scrubResponse $responseDir/$_FILENAME
+scrubResponse "${responseDir}/${_FILENAME}"
 
-getDashboard $dashboardID
-extractResponse $sourceDir/$_FILENAME $sourceDir
-scrubResponse $sourceDir/$_FILENAME
-if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME;
+getDashboard "${dashboardID}"
+extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
+scrubResponse ${sourceDir}/${_FILENAME}
+if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
 then
-  pushDashboard $dashboardID
+  pushDashboard "${dashboardID}"
 fi
 
 # Clean up temp files?
-if ${CONF_dashboard_clean_tmp_files};
+if ${CONF_dashboard_cleanTmpFiles};
 then
   logThis "Cleaning up temp files" "INFO"
   logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
-  rm -f ${responseDir}/*.clone
-  rm -f ${responseDir}/*.clone.response
+  rm -f "${responseDir}/*.clone"
+  rm -f "${responseDir}/*.clone.response"
   logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
-  rm -f ${sourceDir}/*.clone
-  rm -f ${sourceDir}/*.clone.response
+  rm -f "${sourceDir}/*.clone"
+  rm -f "${sourceDir}/*.clone.response"
 else
   logThis "Leaving temp files" "INFO"
 fi

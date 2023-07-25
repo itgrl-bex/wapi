@@ -1,0 +1,81 @@
+---
+REPO:
+  # Where do you track your Issues or User Stories, this is used to populate link in PR.
+  tracker:
+    # This should be the URL of an issue, minus the issue #
+    # example: url: 'https://github.com/itgrl-bex/wapi/issues/'
+    url: ''
+    # This will be the issue or story number to add to the url above to create the link to the issue.
+    # example: issueTag: 'githubIssue.1'  # Meaning this is a GitHub issue with ID of 1.
+    # parsing would extract the value after the . as the actual issue ID and add it to the URL.
+    # This would render to https://github.com/itgrl-bex/wapi/issues/1
+    issueTag: ''
+  # Coded for GitHub only at the moment
+  github:
+    cli:
+      # Do you wish to use the cli?
+      enabled: false
+      # Path to the gh command if installed.
+      path: ''
+    api:
+      # If the github.cli is enabled, then the api will not be used.
+      enabled: true
+      # Url to reach the GitHub server api
+      url:
+      # Global apiToken that can be overridden for each repository.
+      token: ''
+    # This is the repo where the data such as the dashboard and alert json files
+    data:
+      # Optional to be set per repo.
+      apiToken:
+      # Path where the data repo should be stored locally
+      path:
+      # The ssh url to interact with git repository
+      repo:
+      # The ssh key to use for this repository.
+      # Optional: if not set, key must be in user's homedir that is running git commands.
+      ssh_key: ''
+      # If multiple staged changes are detected, should we process one at a time?
+      single_change: true
+      # Information on branch creation
+      branch:
+        template:
+          # Name format for branch names
+          # Questions on how to do this but putting item in config
+          nameFormat: 'templates/branchName.template'
+          # Commit message template to use.
+          commitMessage: 'templates/commitMsg.template'
+      issue:
+        enabled: false
+        template: 'templates/issueMsg.template'
+        subject: 'templates/issueSubject.template'
+      pull_request:
+        template: 'templates/prMsg.template'
+        subject: 'templates/prSubject.template'
+    # This is the information for the code repo
+    code:
+      # Optional to be set per repo.
+      apiToken:
+      # Path where the core code repo should be stored locally
+      path:
+      # The ssh url to interact with git repository
+      repo:
+      # The ssh key to use for this repository.
+      # Optional: if not set, key must be in user's homedir that is running git commands.
+      ssh_key: ''
+      # If multiple staged changes are detected, should we process one at a time?
+      single_change: true
+      # Information on branch creation
+      branch:
+        template:
+          # Name format for branch names
+          # Questions on how to do this but putting item in config
+          nameFormat: 'templates/branchName.template'
+          # Commit message template to use.
+          commitMessage: 'templates/commitMsg.template'
+      issue:
+        template: 'templates/issueMsg.template'
+        subject: 'templates/issueSubject.template'
+      pull_request:
+        template: 'templates/prMsg.template'
+        subject: 'templates/prSubject.template'

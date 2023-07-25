@@ -22,10 +22,10 @@ else
   exit 1
 fi
 
-# If data_path is set in the config, use it.
+# If dataPath is set in the config, use it.
 # Otherwise use the script base directory of ${baseDir}
 
-if [[ -z "${CONF_data_path}" ]];
+if [[ -z "${CONF_dataPath}" ]];
 then
   dashboardDir="${baseDir}/${CONF_dashboard_dir}"
   sourceDir="${baseDir}/${CONF_dashboard_sourceDir}"
@@ -33,25 +33,25 @@ then
   accountDir="${baseDir}/${CONF_account_dir}"
   alertDir="${baseDir}/${CONF_alert_dir}"
 else
-  createDir "${CONF_data_path}"
-  dashboardDir="${CONF_data_path}${CONF_dashboard_dir}"
-  sourceDir="${CONF_data_path}${CONF_dashboard_sourceDir}"
+  createDir "${CONF_dataPath}"
+  dashboardDir="${CONF_dataPath}${CONF_dashboard_dir}"
+  sourceDir="${CONF_dataPath}${CONF_dashboard_sourceDir}"
   responseDir="${dashboardDir}/responses"
-  accountDir="${CONF_data_path}${CONF_account_dir}"
-  alertDir="${CONF_data_path}${CONF_alert_dir}"
+  accountDir="${CONF_dataPath}${CONF_account_dir}"
+  alertDir="${CONF_dataPath}${CONF_alert_dir}"
 fi
 
 ## Logging configuration
 dateTime="`date +%Y-%m-%d` `date +%T%z`" # Date format at beginning of log entries to match RFC
 dateForFileName=`date +%Y%m%d`
-scriptLogDir="${CONF_logging_dir}/${CONF_app_name}"
-scriptLogPath="${scriptLogDir}/${CONF_app_name}-${dateForFileName}.log"
+scriptLogDir="${CONF_logging_dir}/${CONF_appName}"
+scriptLogPath="${scriptLogDir}/${CONF_appName}-${dateForFileName}.log"
 scriptLoggingLevel="${CONF_logging_level}"
-# Setting api_token value
-if [[ ! -z "${CONF_aria_api_token}" ]];
+# Setting apiToken value
+if [[ ! -z "${CONF_aria_apiToken}" ]];
 then
-  api_token=$CONF_aria_api_token
-  unset CONF_aria_api_token
+  apiToken=$CONF_aria_apiToken
+  unset CONF_aria_apiToken
 fi
 
 # Get the options
@@ -97,21 +97,21 @@ while getopts "bdua :hi:s:t:" option; do
           ;;
       t) # API Token
           logThis "Overriding the config file API token values." "INFO"
-          api_token="${OPTARG}"
-          if [[ ! -z "${CONF_account_api_token}" ]];
+          apiToken="${OPTARG}"
+          if [[ ! -z "${CONF_account_apiToken}" ]];
           then
-            logThis "Clearing variable CONF_account_api_token due to override." "INFO"
-            unset CONF_account_api_token
+            logThis "Clearing variable CONF_account_apiToken due to override." "INFO"
+            unset CONF_account_apiToken
           fi
-          if [[ ! -z "${CONF_alert_api_token}" ]];
+          if [[ ! -z "${CONF_alert_apiToken}" ]];
           then
-            logThis "Clearing variable CONF_alert_api_token due to override." "INFO"
-            unset CONF_alert_api_token
+            logThis "Clearing variable CONF_alert_apiToken due to override." "INFO"
+            unset CONF_alert_apiToken
           fi
-          if [[ ! -z "${CONF_dashboard_api_token}" ]];
+          if [[ ! -z "${CONF_dashboard_apiToken}" ]];
           then
-            logThis "Clearing variable CONF_dashboard_api_token due to override." "INFO"
-            unset CONF_dashboard_api_token
+            logThis "Clearing variable CONF_dashboard_apiToken due to override." "INFO"
+            unset CONF_dashboard_apiToken
           fi
           ;;
       *) # display help info
@@ -124,38 +124,38 @@ case $action in
 
   account)
     echo "Let's modify some groups"
-    if [[ ! -z "${CONF_account_api_token}" ]];
+    if [[ ! -z "${CONF_account_apiToken}" ]];
     then
-      api_token=$CONF_account_api_token
-      unset CONF_aria_api_token
+      apiToken=$CONF_account_apiToken
+      unset CONF_aria_apiToken
     fi
     source $actionCode 
     ;;
 
   alert)
     echo "Let's publish some alerts"
-    if [[ ! -z "${CONF_alert_api_token}" ]];
+    if [[ ! -z "${CONF_alert_apiToken}" ]];
     then
-      api_token=$CONF_alert_api_token
-      unset CONF_aria_api_token
+      apiToken=$CONF_alert_apiToken
+      unset CONF_aria_apiToken
     fi
     source $actionCode
     ;;
 
   dashboard)
-    if [[ ! -z "${CONF_dashboard_api_token}" ]];
+    if [[ ! -z "${CONF_dashboard_apiToken}" ]];
     then
-      api_token=$CONF_dashboard_api_token
-      unset CONF_dashboard_api_token
+      apiToken=$CONF_dashboard_apiToken
+      unset CONF_dashboard_apiToken
     fi
     source $actionCode
     ;;
 
   single_dashboard)
-    if [[ ! -z "${CONF_dashboard_api_token}" ]];
+    if [[ ! -z "${CONF_dashboard_apiToken}" ]];
     then
-      api_token=$CONF_dashboard_api_token
-      unset CONF_dashboard_api_token
+      apiToken=$CONF_dashboard_apiToken
+      unset CONF_dashboard_apiToken
     fi
     source $actionCode
     ;;
