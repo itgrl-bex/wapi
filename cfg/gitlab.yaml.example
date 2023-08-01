@@ -1,0 +1,63 @@
+---
+REPO:
+  # Coded for GitHub only at the moment. This and associated library are just a skeleton.
+  git:
+    api:
+      # Url to reach the GitHub server api
+      url:
+      # Global apiToken that can be overridden for each repository.
+      token:
+    # This is the repo where the data such as the dashboard and alert json files
+    data:
+      # Optional to be set per repo.
+      apiToken:
+      # Path where the data repo should be stored locally
+      path:
+      # The ssh url to interact with git repository
+      repo:
+      # The ssh key to use for this repository.
+      # Optional: if not set, key must be in user's homedir that is running git commands.
+      ssh_key: ''
+      # If multiple staged changes are detected, should we process one at a time?
+      single_change: true
+      # Information on branch creation
+      branch:
+        template:
+          # Name format for branch names
+          # Questions on how to do this but putting item in config
+          nameFormat: 'templates/branchName.template'
+          # Commit message template to use.
+          commitMessage: 'templates/commitMsg.template'
+      issue:
+        template: 'templates/issueMsg.template'
+        subject: 'templates/issueSubject.template'
+      pull_request:
+        template: 'templates/prMsg.template'
+        subject: 'templates/prSubject.template'
+    # This is the information for the code repo
+    code:
+      # Optional to be set per repo.
+      apiToken:
+      # Path where the core code repo should be stored locally
+      path:
+      # The ssh url to interact with git repository
+      repo:
+      # The ssh key to use for this repository.
+      # Optional: if not set, key must be in user's homedir that is running git commands.
+      ssh_key: ''
+      # If multiple staged changes are detected, should we process one at a time?
+      single_change: true
+      # Information on branch creation
+      branch:
+        template:
+          # Name format for branch names
+          # Questions on how to do this but putting item in config
+          nameFormat: 'templates/branchName.template'
+          # Commit message template to use.
+          commitMessage: 'templates/commitMsg.template'
+      issue:
+        template: 'templates/issueMsg.template'
+        subject: 'templates/issueSubject.template'
+      pull_request:
+        template: 'templates/prMsg.template'
+        subject: 'templates/prSubject.template'

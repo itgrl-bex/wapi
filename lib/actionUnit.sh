@@ -8,62 +8,79 @@
 #
 ############################################################
 
-
 ## Load common functions
 source "${baseDir}/lib/common.sh"
 
-source "${baseDir}/lib/libdashboard.sh"
-source "${baseDir}/lib/libalert.sh"
-source "${baseDir}/lib/libaccount.sh"
+source "${baseDir}/lib/libDashboard.sh"
+source "${baseDir}/lib/libAlert.sh"
+source "${baseDir}/lib/libAccount.sh"
+source "${baseDir}/lib/libGithub.sh"
 
 # Becca's testing
 # Loop through dashboard files in dashboard dir
-for filename in $dashboardDir/*.json; do
-    echo $dashboardDir
+for filename in "${dashboardDir}"/*.json; do
     logThis "Processing ${filename}" "INFO"
-    _FILENAME=$(basename $filename)
-    getDashboardID $filename
+    _FILENAME=$(basename "${filename}")
+    getDashboardID "${filename}"
     if [[ "${_FILENAME}" == *"-Clone"* ]];
     then
       logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-      processCloneFileName $_FILENAME
+      processCloneFileName "${_FILENAME}"
       # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-      processCloneID $_FILENAME
+      processCloneID "${_FILENAME}"
     else
       if [[ "${dashboardID}" == *"-Clone"* ]];
       then
         logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-        processCloneID $_FILENAME
+        processCloneID "${_FILENAME}"
       else
         echo "Not a clone."
-        echo $_FILENAME
-        echo $dashboardID
+        echo "${_FILENAME}"
+        echo "${dashboardID}"
       fi
     fi
 
-    scrubResponse $responseDir/$_FILENAME
+    scrubResponse "${responseDir}/${_FILENAME}"
 
-    getDashboard $dashboardID
-    extractResponse $sourceDir/$_FILENAME $sourceDir
-    scrubResponse $sourceDir/$_FILENAME
-    if compareFile $responseDir/$_FILENAME $sourceDir/$_FILENAME;
+    echo '########################################################################################'
+    echo "${dashboardID}"
+
+    # Failing
+    if getDashboard;
     then
-      pushDashboard $dashboardID
+      extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+      echo "I am groot!"
+      scrubResponse "${sourceDir}/${_FILENAME}"
+      if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
+      then
+        pushDashboard "${dashboardID}"
+      fi
+    else
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+      echo 'I am not groot!'
+      if [[ ${#} == 3 ]];
+      then
+        echo 'I am GROOOOOOT!'
+        logThis "Skipped processing dashboard ${dashboardID} due to fresh creation." "INFO"
+      else
+        logThis "An unexpected error has ocurred. Dashboard ${dashboardID} could not be retrieved or created." "SEVERE"
+      fi
     fi
 
     # Set the published tag as per the config
-    setTag "$dashboardID" 'dashboard' "${CONF_dashboard_published_tag}"
+    setTag "${dashboardID}" 'dashboard' "${CONF_dashboard_published_tag}"
 
     # Clean up temp files?
-    if ${CONF_dashboard_clean_tmp_files};
+    if ${CONF_dashboard_cleanTmpFiles};
     then
       logThis "Cleaning up temp files" "INFO"
       logThis "Cleaning up temp files in ${responseDir} with .response and .response.clone extensions." "DEBUG"
-      rm -f ${responseDir}/*.response.clone
-      rm -f ${responseDir}/*.response
+      rm -f "${responseDir}/*.response.clone"
+      rm -f "${responseDir}/*.response"
       logThis "Cleaning up temp files in ${sourceDir} with .response and .response.clone extensions." "DEBUG"
-      rm -f ${sourceDir}/*.response.clone
-      rm -f ${sourceDir}/*.response
+      rm -f "${sourceDir}/*.response.clone"
+      rm -f "${sourceDir}/*.response"
     else
       logThis "Leaving temp files" "INFO"
     fi
@@ -74,6 +91,17 @@ done
 # Validate all dashboards with the tag defined in CONF_dashboard_published_tag have the proper ACL set.
 for d in $(searchTag 'dashboard' "${CONF_dashboard_published_tag}");
 do
-  setACL "${d}" "dashboard"
+  dashboardPresent=$(grep "${d}" "${dashboardDir}"/*.json | grep '"id":' | awk -F '"' '{print $4}')
+  if [[ "${dashboardPresent}" == "${d}" ]];
+  then
+    logThis "Confirmed published dashboard ${d} in remote and in repo." "INFO"
+    setACL "${d}" "dashboard"
+  else
+    logThis "Confirmed published dashboard ${d} in remote and is not in the repo." "INFO"
+    logThis "Deleting published dashboard ${d} due to it not being in a file." "INFO"
+    # Delete functionality places dashboard in trash for 30 days to be able to be recovered.
+    deleteDashboard "${d}"
+  fi
 done
 
+# source "${baseDir}/lib/actionProcessStagedDashboards.sh"

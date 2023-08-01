@@ -12,5 +12,6 @@
 ## Load common functions
 source "${baseDir}/lib/common.sh"
 
-source ${baseDir}/lib/libaccount.sh
+source "${baseDir}/lib/libAccount.sh"
+
 

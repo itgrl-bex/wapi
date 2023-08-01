@@ -8,9 +8,7 @@
 #
 ############################################################
 
-
 ## Load common functions
 source "${baseDir}/lib/common.sh"
 
-source ${baseDir}/lib/libalert.sh
-
+source "${baseDir}/lib/libAlert.sh"

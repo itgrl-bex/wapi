@@ -11,7 +11,7 @@ baseDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 config="${baseDir}/cfg/config.yaml"
 ## Load common functions
 source ${baseDir}/lib/common.sh
-source ${baseDir}/lib/libdashboard.sh
+source ${baseDir}/lib/libDashboard.sh
 
 ## Read Config file
 ## Read Config file
@@ -30,12 +30,12 @@ responseDir="${dashboardDir}/responses"
 dateTime="`date +%Y-%m-%d` `date +%T%z`" # Date format at beginning of log entries to match RFC
 dateForFileName=`date +%Y%m%d`
 scriptLogDir="${baseDir}/log/"
-scriptLogPath="${scriptLogDir}/${CONF_app_name}-${dateForFileName}.log"
+scriptLogPath="${scriptLogDir}/${CONF_appName}-${dateForFileName}.log"
 scriptLoggingLevel="${CONF_logging_level}"
 
 echo "This utility is designed to aid in the easy retrieval of the json. \
 This does require you to have API permissions in VMware Aria Operations for \
-Applications. Please see [Dashboard Development] (dashboards/DashboardDevelopment.md)\
+Applications. Please see [Dashboard Development] (dashboards/DASHBOARDDEVELOPMENT.md)\
 for instructions on how to get an API token and the designed workflow for dashboard \
 development.
 
@@ -46,10 +46,10 @@ You will now be prompted for your API Token and the Dashboard ID to retrieve.
 
 if [[ -z "${ENV_WAPI_USER_TOKEN}" ]];
 then
-    # api_token="USER INPUT"
-    read -p "Enter your API token: " api_token
+    # apiToken="USER INPUT"
+    read -p "Enter your API token: " apiToken
 else
-    api_token="${ENV_WAPI_USER_TOKEN}"
+    apiToken="${ENV_WAPI_USER_TOKEN}"
 fi
 
 while true;
