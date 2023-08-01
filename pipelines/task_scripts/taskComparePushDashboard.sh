@@ -2,19 +2,10 @@
 
 ##################################################################################
 #
-# Purpose is to remove action specific logic to files.
-# Reason is to simply and shorten main calling script.
-# Benefit is that logic for specific action is easy to maintain.
+# Task script for pipelines to be called by init.sh
 #
 ##################################################################################
 
-## Load init to load the config
-# shellcheck source="../../init.sh"
-source "../../init.sh"
-unset myDir
-
 ## Load common functions
-# shellcheck source="../../lib/common.sh"
-source "../../lib/common.sh"
-# shellcheck source="../../lib/libDashboard.sh"
-source "../../lib/libDashboard.sh"
+source "${baseDir}/lib/common.sh"
+source "${baseDir}/lib/libDashboard.sh"

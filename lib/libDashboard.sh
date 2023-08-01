@@ -20,20 +20,23 @@ function getDashboardID {
   logThis "Retrieving dashboardID" "INFO"
   local _OUTPUT
   _OUTPUT=$(jq -r '.response' "${1}")
-  if [ -n "${_OUTPUT}" ];
+  if [[ -z "${_OUTPUT}" ]];
   then
     dashboardID=$(jq -r '.response.id' "${1}")
     echo "${dashboardID}"
     extractResponse "${1}" "${responseDir}"
   else
+    createDir "${responseDir}"
     dashboardID=$(jq -r '.id' "${1}")
     logThis "Copying dashboard to response file since the response body has been extracted already." "INFO"
-    cp "${1}" "${responseDir}"/
+    local _FILENAME
+    _FILENAME=$(basename "${1}")
+    cp "${1}" "${responseDir}/${_FILENAME}.response"
   fi
 }
 
 function extractResponse {
-  createDir "${responseDir}"
+  createDir "${2}"
   logThis "Extracting JSON response body from file." "INFO"
   local _FILENAME
   _FILENAME=$(basename "${1}")
@@ -66,14 +69,22 @@ function getDashboard {
   then
     logThis "Directory ${sourceDir} exists." "DEBUG"
   else
-    mkdir -p $sourceDir && logThis "Successfully created ${sourceDir}." "INFO" || logThis "Error creating directory ${sourceDir}." "CRITICAL"
+    mkdir -p "${sourceDir}" && logThis "Successfully created ${sourceDir}." "INFO" || logThis "Error creating directory ${sourceDir}." "CRITICAL"
   fi
   logThis "Retrieving Dashboard ${dashboardID}." "INFO"
-  logThis "Executing command:  [curl -X 'GET' -o $sourceDir/$dashboardID.json \"${CONF_aria_operationsUrl}/api/v2/dashboard/${dashboardID}\" -H 'accept: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
-  curl -X 'GET' -o "${sourceDir}/${dashboardID}.json" \
+  logThis "Executing command:  [curl -X 'GET' -o ${sourceDir}/${dashboardID}.json \"${CONF_aria_operationsUrl}/api/v2/dashboard/${dashboardID}\" -H 'accept: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
+  if curl -X 'GET' -o "${sourceDir}/${dashboardID}.json" \
     "${CONF_aria_operationsUrl}/api/v2/dashboard/${dashboardID}" \
     -H 'accept: application/json' \
-    -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully retrieved dashboard ${dashboardID}." "INFO" || logThis "Could not retrieve dashboard ${dashboardID}." "CRITICAL"
+    -H "Authorization: Bearer  ${apiToken}";
+  then
+    logThis "Successfully retrieved dashboard ${dashboardID}." "INFO"
+    return 0
+  else
+    logThis "Could not find dashboard ${dashboardID}, creating dashboard." "INFO"
+    createDashboard
+    return 3
+  fi
 }
 
 function getWorkingCopyDashboard {
@@ -140,4 +151,22 @@ function processCloneID {
   sed -i '' -E 's/ \(Clone\)//' "${responseDir}/${_FILENAME}.response"
   logThis "Changing (dashboardID) variable from ${dashboardID} to ${_dashboardID}." "DEBUG"
   dashboardID="${_dashboardID}"
+}
+
+function deleteDashboard {
+  logThis "Deleting Dashboard ${1}" "INFO"
+  logThis "Executing command:  [curl -X 'DELETE' \"${CONF_aria_operationsUrl}/api/v2/dashboard/${1}?skipTrash=false\" -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
+  curl -X 'DELETE' \
+    "${CONF_aria_operationsUrl}/api/v2/dashboard/${1}?skipTrash=false" \
+    -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully deleted dashboard ${1}." "INFO" || logThis "Could not delete dashboard ${1}." "CRITICAL"
+}
+
+function createDashboard {
+  logThis "Creating Dashboard ${dashboardID}" "INFO"
+  logThis "Executing command:  [curl -X 'POST' --data \"@${responseDir}/${dashboardID}.json\" \"${CONF_aria_operationsUrl}/api/v2/dashboard\" -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
+  curl -X 'POST' --data "@${responseDir}/${dashboardID}.json" \
+    "${CONF_aria_operationsUrl}/api/v2/dashboard" \
+    -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully created the dashboard ${dashboardID}." "INFO" || logThis "Could not create the dashboard ${dashboardID}." "CRITICAL"
 }

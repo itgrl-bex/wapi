@@ -66,8 +66,21 @@ function createBranch {
 $(<${template})
 EOF
 " 2> /dev/null)
-  cd "${path}/${repo}" || echo 'failed to change directories'
-  git checkout -b "${branchName}"
+
+  # TODO: Check to see if branch exists before creating.
+  # TODO: Set flag to create PR if branch does not exist
+ 
+  if git rev-parse --verify "${branchName}" 2>/dev/null;
+  then 
+    cd "${dataPath}" || echo 'failed to change directories'
+    git checkout "${branchName}"
+    needPR=false
+  else
+    cd "${dataPath}" || echo 'failed to change directories'
+    git checkout -b "${branchName}"
+    needPR=true
+  fi
+
 }
 
 function createIssue {
@@ -95,13 +108,33 @@ function createPullRequest {
   local token="${3}"
   local msgType="${4}"
   local msgID="${5}"
-curl -L \
-  -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${token}" \
-  -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${url}/repos/${repo}/pulls" \
-  -d '{"title":"Amazing new feature","body":"Please pull these awesome changes in!","head":"octocat:new-feature","base":"master"}'
+  local baseBranch="${6}"
+  local titleTemplate="${7}"
+  local msgTemplate="${8}"
+  local tag="${9}"
+  # shellcheck disable=SC2034
+  local msgIDpublished="${10}"
+  local currentBranch
+  currentBranch="$(git branch --show-current)"
+  local msg
+  local title
+  # shellcheck disable=SC2046 disable=SC2086
+  msg=$(eval "cat <<EOF
+$(<${msgTemplate})
+EOF
+" 2> /dev/null)
+  # shellcheck disable=SC2046 disable=SC2086
+  title=$(eval "cat <<EOF
+$(<${titleTemplate})
+EOF
+" 2> /dev/null)
+  curl -L \
+    -X POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer ${token}" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "${url}/repos/${repo}/pulls" \
+    -d "{\"title\":\"${title}\",\"body\":\"${msg}\",\"head\":\"${currentBranch}\",\"base\":\"${baseBranch}\"}"
 }
 
 function listPullRequest {
@@ -120,7 +153,7 @@ function getPullRequest {
   local url="${2}"
   local token="${3}"
   local pr="${4}"
-
+  cd "${path}/${repo}" || echo 'failed to change directories'
   curl -L \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${token}" \
@@ -147,9 +180,18 @@ $(<${template})
 EOF
 " 2> /dev/null)
 
-  cd "${path}/${repo}" || echo 'failed to change directories'
+  local authorName
+  authorName=$(echo "${author}" | awk -F '@' '{print $1}')
+
+  cd "${dataPath}" || echo 'failed to change directories'
   git add .
 
-  git commit --author="${author}" -am "${message}"
+  git commit --author="${authorName} <${author}>" -am "${message}"
 }
 
+function gitPush {
+  local branchName="${1}"
+  cd "${dataPath}" || echo 'failed to change directories'
+  git config push.autoSetupRemote true
+  git push 
+}

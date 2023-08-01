@@ -6,39 +6,41 @@ REPO:
     # example: url: 'https://github.com/itgrl-bex/wapi/issues/'
     url: ''
     # This will be the issue or story number to add to the url above to create the link to the issue.
-    # example: issueTag: 'githubIssue.1'  # Meaning this is a GitHub issue with ID of 1.
+    # example: issueTagPrefix: 'githubIssue'  
+    # So an item would be tagged with githubIssue.1 
+    # Meaning this is a GitHub issue with ID of 1.
     # parsing would extract the value after the . as the actual issue ID and add it to the URL.
     # This would render to https://github.com/itgrl-bex/wapi/issues/1
-    issueTag: ''
+    issueTagPrefix: ''
   # Coded for GitHub only at the moment
-  github:
-    cli:
-      # Do you wish to use the cli?
-      enabled: false
-      # Path to the gh command if installed.
-      path: ''
+  git:
+    # Flag to set if there is a separate data repository. (true/false)
+    dataRepo: true
     api:
       # If the github.cli is enabled, then the api will not be used.
       enabled: true
       # Url to reach the GitHub server api
-      url:
+      url: 'https://api.github.com'
       # Global apiToken that can be overridden for each repository.
-      token: ''
-    # This is the repo where the data such as the dashboard and alert json files
+      token: 'mySecretAPItoken'
+    # This is the repo where the data such as the dashboard and alert json files if using split repos
     data:
       # Optional to be set per repo.
-      apiToken:
+      # apiToken:
       # Path where the data repo should be stored locally
-      path:
-      # The ssh url to interact with git repository
-      repo:
+      path: '/opt/repos'
+      # The repo name of the repository
+      repo: 'wapi-data'
+      # The owner of the repository
+      repoOwner: 'itgrl-bex'
+      # The ssh url to interact with git repository 
+      repoSshUrl: 'git@github.com:itgrl-bex/wapi-data.git'
       # The ssh key to use for this repository.
       # Optional: if not set, key must be in user's homedir that is running git commands.
-      ssh_key: ''
-      # If multiple staged changes are detected, should we process one at a time?
-      single_change: true
+      # sshKey: ''
       # Information on branch creation
       branch:
+        base: 'main'
         template:
           # Name format for branch names
           # Questions on how to do this but putting item in config
@@ -49,24 +51,27 @@ REPO:
         enabled: false
         template: 'templates/issueMsg.template'
         subject: 'templates/issueSubject.template'
-      pull_request:
+      pullRequest:
         template: 'templates/prMsg.template'
         subject: 'templates/prSubject.template'
-    # This is the information for the code repo
+    # This is the information for the code repo mainly if using a single repo.
     code:
       # Optional to be set per repo.
-      apiToken:
+      # apiToken:
       # Path where the core code repo should be stored locally
-      path:
-      # The ssh url to interact with git repository
-      repo:
+      path: '/opt/repos'
+      # The repo name of the repository
+      repo: 'wapi'
+      # The owner of the repository
+      repoOwner: 'itgrl-bex'
+      # The ssh url to interact with git repository 
+      repoSshUrl: 'git@github.com:itgrl-bex/wapi.git'
       # The ssh key to use for this repository.
       # Optional: if not set, key must be in user's homedir that is running git commands.
-      ssh_key: ''
-      # If multiple staged changes are detected, should we process one at a time?
-      single_change: true
+      # sshKey: ''
       # Information on branch creation
       branch:
+        base: 'main'
         template:
           # Name format for branch names
           # Questions on how to do this but putting item in config
@@ -74,8 +79,9 @@ REPO:
           # Commit message template to use.
           commitMessage: 'templates/commitMsg.template'
       issue:
+        enabled: false
         template: 'templates/issueMsg.template'
         subject: 'templates/issueSubject.template'
-      pull_request:
+      pullRequest:
         template: 'templates/prMsg.template'
         subject: 'templates/prSubject.template'

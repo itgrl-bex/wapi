@@ -261,7 +261,7 @@ function setACL {
     local _remoteModifyAcl=($(jq -r '.modifyAcl' "${remoteACL}" | jq -r '.[].id'))
     local _modifyAcl=($(yq ".CONF.${apiType}.published.acls.modifyAcl" -o=json $config | jq -r '.[]'))
     changed=false
-    for r in $_remoteModifyAcl;
+    for r in "${_remoteModifyAcl[@]}";
     do
       if [[ ! " ${_modifyAcl[*]} " =~ " ${r} " ]];
       then
@@ -280,7 +280,7 @@ function setACL {
 
     local _remoteViewAcl=($(jq -r '.viewAcl' "${remoteACL}" | jq -r '.[].id'))
     local _viewAcl=($(yq ".CONF.${apiType}.published.acls.viewAcl" -o=json $config | jq -r '.[]'))
-    for r in ${_remoteViewAcl[*]};
+    for r in "${_remoteViewAcl[@]}";
     do
       if [[ ! " ${_viewAcl[*]} " =~ ${r} ]];
       then
@@ -288,7 +288,7 @@ function setACL {
         changed=true
       fi
     done
-    for r in ${_viewAcl};
+    for r in "${_viewAcl[@]}";
     do
       if [[ ! " ${_remoteViewAcl[*]} " =~ ${r} ]];
       then
@@ -303,7 +303,8 @@ function setACL {
   if $changed;
   then
     logThis "The ACLs are different, setting ACL to configured ACL." "INFO"
-    local _data="[ $(yq -o json '.CONF.dashboard.published.acls' cfg/config.yaml | \
+    local _data
+    _data="[ $(yq -o json '.CONF.dashboard.published.acls' cfg/config.yaml | \
     jq ". += { \"entityId\": \"${id}\" }" ) ]"
 
     logThis "Executing command:  [curl -X 'PUT' -d \"${_data}\" \"${CONF_aria_operationsUrl}/api/v2/${apiType}/acl/set\" -H 'Accept: application/json' -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
@@ -459,12 +460,12 @@ function createDir {
     logThis "Required parameter 'directoryPath' missing." "SEVERE"
   fi
   logThis "Checking ${dir}" "INFO"
-  if [ -d $dir ];
+  if [ -d "${dir}" ];
   then
     logThis "Directory ${dir} exists" "DEBUG"
   else
     logThis "Executing the command[mkdir ${dir}]" "DEBUG"
-    mkdir -p $dir && logThis "Successfully created ${dir}." "INFO" || logThis "Error creating directory ${dir}." "CRITICAL"
+    mkdir -p "${dir}" && logThis "Successfully created ${dir}." "INFO" || logThis "Error creating directory ${dir}." "CRITICAL"
   fi
 }
 

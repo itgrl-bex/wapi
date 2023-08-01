@@ -4,51 +4,24 @@ CONF:
   # dataPath config item is optional and if not present, the focus area directories \
   # such as account.dir and dashboard.dir values will be prepended with the base directory \
   # of the script wapi.sh
-  # Example: dataPath: '/opt/wapi_data/'
+  # Example: dataPath: '/opt/repos/wapi-data/'
   dataPath: ''
-  # Optionally set web proxy
-  # proxy:
-  #   https: 
-  #   http: 
-  #   no_proxy: 
   
   # Globally cleanup tmp files from processing comparisons and changes 
   # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
   cleanTmpFiles: true
 
-  git:
-    data:
-      path:
-      repo:
-      ssh_key:
-      single_change: true
-      branch:
-        name_format:
-        commit_message:
-      issue:
-        template:
-        subject:
-      pull_request:
-        template:
-        subject:
-    code:
-      path:
-      repo:
-      ssh_key:
-      issue:
-        template:
-        subject:
-      pull_request:
-        template:
-        subject:
+  # Designing to accommodate expansion for other repository types
+  # Currently allowed options: github
+  repoManagementPlatform: github
 
   aria:
     svcAccount: 'sa::example-dashboards-gitops'
     apiToken: '4example-th1s-ismy-d3m0-apitoken4u2c'
     operationsUrl: 'https://vmware.wavefront.com'
-    # New owner of found orphans
+    # New owner of found orphans 
     orphanage:
-      owner:
+      owner: ''
       tag: 'found.orphan'
       acls:
         viewAcl:
@@ -59,7 +32,7 @@ CONF:
           - "4service-user-acct-todo-thisACLactio"
     # New owner of owned items for deactivated/deleted users
     userDelete:
-      owner:
+      owner: ''
       tag: 'found.orphan'
       acls:
         viewAcl:
@@ -69,12 +42,16 @@ CONF:
           - # Group or User ID
           - "4service-user-acct-todo-thisACLactio"
 
-  account: 
+  account:
+    # Directory in the data repo which is the source of record for managed account objects
     dir: '/account'
     # Config option allows to set API token specific for each function.
     # apiToken: ''
     # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
     # cleanTmpFiles: true
+    staged:
+      workingDir: '/staged/accounts'
+      tag: 'staged.dashboard'
     published:
       tag: 'published.account'
       # Optional to include ACLs for account functions
@@ -109,11 +86,15 @@ CONF:
     #       - "4service-user-acct-todo-thisACLactio"
 
   alert:
+    # Directory in the data repo which is the source of record for managed alert objects
     dir: '/alert'
     # Config option allows to set API token specific for each function.
     # apiToken: ''
     # Optionally this can be set for Dashboards, Alerts, and Account functions individually as well
     # cleanTmpFiles: true
+    staged:
+      workingDir: '/staged/alerts'
+      tag: 'staged.alert'
     published:
       tag: 'published.alert'
       # Optional to include ACLs for Alert functions
@@ -148,6 +129,7 @@ CONF:
     #       - "4service-user-acct-todo-thisACLactio"
 
   dashboard:
+    # Directory in the data repo which is the source of record for managed dashboard objects
     dir: '/dashboards'
     # Config option allows to set API token specific for each function.
     # apiToken: ''
@@ -157,14 +139,6 @@ CONF:
     staged:
       workingDir: '/staged/dashboards'
       tag: 'staged.dashboard'
-      delete:
-        branch: false
-        published:
-          enabled: false
-          tag:
-            flagForDelete: 'pipeline.delete.dashboard'
-          retainDays: 7
-          modifyAcl: true
     published:
       tag: 'published.dashboard'
       acls:
@@ -207,4 +181,4 @@ CONF:
     # SEVERE and CRITICAL are also supported levels as extremes of ERROR
     # SEVERE and CRITICAL will exit the program and log the exit
     level: 'WARN'
-    dir: "/var/log/wapi/"
+    dir: '/var/log/wapi/'

@@ -14,13 +14,21 @@ config="${baseDir}/cfg/config.yaml"
 source "${baseDir}/lib/common.sh"
 
 ## Read Config file
-if validateYAML $config;
+if validateYAML "${config}";
 then
-  eval $(yq -o=shell $config )
+  echo 'valid config'
+  eval $(yq -o=shell "${config}" )
 else
   echo 'Configuration file ${config} is not valid yaml.'
   exit 1
 fi
+
+## Logging configuration
+dateTime="$(date +%Y-%m-%d) $(date +%T%z)" # Date format at beginning of log entries to match RFC
+dateForFileName=$(date +%Y%m%d)
+scriptLogDir="${CONF_logging_dir}/${CONF_appName}"
+scriptLogPath="${scriptLogDir}/${CONF_appName}-${dateForFileName}.log"
+scriptLoggingLevel="${CONF_logging_level}"
 
 # If dataPath is set in the config, use it.
 # Otherwise use the script base directory of ${baseDir}
@@ -28,25 +36,21 @@ fi
 if [[ -z "${CONF_dataPath}" ]];
 then
   dashboardDir="${baseDir}/${CONF_dashboard_dir}"
-  sourceDir="${baseDir}/${CONF_dashboard_sourceDir}"
-  responseDir="${dashboardDir}/responses"
+  sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
+  responseDir="${CONF_tmpDir}/dashboards/responses"
   accountDir="${baseDir}/${CONF_account_dir}"
   alertDir="${baseDir}/${CONF_alert_dir}"
 else
+  echo "####################################################################"
+  echo "${CONF_dataPath}"
   createDir "${CONF_dataPath}"
-  dashboardDir="${CONF_dataPath}${CONF_dashboard_dir}"
-  sourceDir="${CONF_dataPath}${CONF_dashboard_sourceDir}"
-  responseDir="${dashboardDir}/responses"
-  accountDir="${CONF_dataPath}${CONF_account_dir}"
-  alertDir="${CONF_dataPath}${CONF_alert_dir}"
+  dashboardDir="${CONF_dataPath}/${CONF_dashboard_dir}"
+  sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
+  responseDir="${CONF_tmpDir}/dashboards/responses"
+  accountDir="${CONF_dataPath}/${CONF_account_dir}"
+  alertDir="${CONF_dataPath}/${CONF_alert_dir}"
 fi
 
-## Logging configuration
-dateTime="`date +%Y-%m-%d` `date +%T%z`" # Date format at beginning of log entries to match RFC
-dateForFileName=`date +%Y%m%d`
-scriptLogDir="${CONF_logging_dir}/${CONF_appName}"
-scriptLogPath="${scriptLogDir}/${CONF_appName}-${dateForFileName}.log"
-scriptLoggingLevel="${CONF_logging_level}"
 # Setting apiToken value
 if [[ ! -z "${CONF_aria_apiToken}" ]];
 then
@@ -55,7 +59,7 @@ then
 fi
 
 # Get the options
-while getopts "bdua :hi:s:t:" option; do
+while getopts "bdgufae :hi:s:t:" option; do
    case $option in
       b) # Becca's test code
           action=unit
@@ -67,11 +71,23 @@ while getopts "bdua :hi:s:t:" option; do
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Executing Dashboard Management Logic." "INFO"
           ;;
+      g) # Execute Process Staged Dashboards
+          action='processStagedDashboards'
+          actionCode="${baseDir}/lib/actionProcessStagedDashboards.sh"
+          logThis "The -${option} flag was set." "DEBUG"
+          logThis "Processing Staged Dashboards Logic." "INFO"
+          ;;
       u) # Execute Account logic
           action='account'
           actionCode="${baseDir}/lib/actionAccount.sh"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Executing Account Management Logic for roles, groups, and group membership." "INFO"
+          ;;
+      f) # Execute Process Staged Account Objects
+          action='processStagedAccounts'
+          actionCode="${baseDir}/lib/actionProcessStagedAccounts.sh"
+          logThis "The -${option} flag was set." "DEBUG"
+          logThis "Processing Staged Accounts Logic." "INFO"
           ;;
       a) # Execute Alert logic
           action='alert'
@@ -79,19 +95,25 @@ while getopts "bdua :hi:s:t:" option; do
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Executing Alert Management Logic." "INFO"
           ;;
+      e) # Execute Process Staged Alerts
+          action='processStagedAlerts'
+          actionCode="${baseDir}/lib/actionProcessStagedAlerts.sh"
+          logThis "The -${option} flag was set." "DEBUG"
+          logThis "Processing Staged Alerts Logic." "INFO"
+          ;;
       i) # Dashboard ID
           # The ID of the Dashboard to publish
-          action='single_dashboard'
+          action='singleDashboard'
           actionCode="${baseDir}/lib/actionSingleDashboard.sh"
-          dashboard_ID="${OPTARG}"
+          dashboardID="${OPTARG}"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Received Dashboard ID for specific Dashboard Logic." "INFO"
           ;;
       s) # Source Dashboard ID
           # The ID of the published Dashboard
-          action='single_dashboard'
+          action='singleDashboard'
           actionCode="${baseDir}/lib/actionSingleDashboard.sh"
-          source_id="${OPTARG}"
+          sourceID="${OPTARG}"
           logThis "The -${option} flag was set." "DEBUG"
           logThis "Received Source Dashboard ID for specific Dashboard Logic." "INFO"
           ;;
@@ -129,7 +151,17 @@ case $action in
       apiToken=$CONF_account_apiToken
       unset CONF_aria_apiToken
     fi
-    source $actionCode 
+    source "${actionCode}" 
+    ;;
+
+  processStagedAccounts)
+    echo "Let's modify some groups"
+    if [[ ! -z "${CONF_account_apiToken}" ]];
+    then
+      apiToken=$CONF_account_apiToken
+      unset CONF_aria_apiToken
+    fi
+    source "${actionCode}" 
     ;;
 
   alert)
@@ -139,7 +171,17 @@ case $action in
       apiToken=$CONF_alert_apiToken
       unset CONF_aria_apiToken
     fi
-    source $actionCode
+    source "${actionCode}"
+    ;;
+
+  processStagedAlerts)
+    echo "Let's modify some groups"
+    if [[ ! -z "${CONF_alert_apiToken}" ]];
+    then
+      apiToken=$CONF_alert_apiToken
+      unset CONF_aria_apiToken
+    fi
+    source "${actionCode}" 
     ;;
 
   dashboard)
@@ -148,21 +190,31 @@ case $action in
       apiToken=$CONF_dashboard_apiToken
       unset CONF_dashboard_apiToken
     fi
-    source $actionCode
+    source "${actionCode}"
     ;;
 
-  single_dashboard)
+  processStagedDashboards)
+    echo "Let's modify some groups"
+    if [[ ! -z "${CONF_dashboard_apiToken}" ]];
+    then
+      apiToken=$CONF_dashboard_apiToken
+      unset CONF_aria_apiToken
+    fi
+    source "${actionCode}" 
+    ;;
+
+  singleDashboard)
     if [[ ! -z "${CONF_dashboard_apiToken}" ]];
     then
       apiToken=$CONF_dashboard_apiToken
       unset CONF_dashboard_apiToken
     fi
-    source $actionCode
+    source "${actionCode}"
     ;;
 
   unit)
     echo "Executing external action code actionUnit.sh"
-    source $actionCode
+    source "${actionCode}"
     ;;
 
   *)

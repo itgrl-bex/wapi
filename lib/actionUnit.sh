@@ -42,12 +42,30 @@ for filename in "${dashboardDir}"/*.json; do
 
     scrubResponse "${responseDir}/${_FILENAME}"
 
-    getDashboard "${dashboardID}"
-    extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
-    scrubResponse "${sourceDir}/${_FILENAME}"
-    if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
+    echo '########################################################################################'
+    echo "${dashboardID}"
+
+    # Failing
+    if getDashboard;
     then
-      pushDashboard "${dashboardID}"
+      extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+      echo "I am groot!"
+      scrubResponse "${sourceDir}/${_FILENAME}"
+      if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
+      then
+        pushDashboard "${dashboardID}"
+      fi
+    else
+      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+      echo 'I am not groot!'
+      if [[ ${#} == 3 ]];
+      then
+        echo 'I am GROOOOOOT!'
+        logThis "Skipped processing dashboard ${dashboardID} due to fresh creation." "INFO"
+      else
+        logThis "An unexpected error has ocurred. Dashboard ${dashboardID} could not be retrieved or created." "SEVERE"
+      fi
     fi
 
     # Set the published tag as per the config
@@ -73,6 +91,17 @@ done
 # Validate all dashboards with the tag defined in CONF_dashboard_published_tag have the proper ACL set.
 for d in $(searchTag 'dashboard' "${CONF_dashboard_published_tag}");
 do
-  setACL "${d}" "dashboard"
+  dashboardPresent=$(grep "${d}" "${dashboardDir}"/*.json | grep '"id":' | awk -F '"' '{print $4}')
+  if [[ "${dashboardPresent}" == "${d}" ]];
+  then
+    logThis "Confirmed published dashboard ${d} in remote and in repo." "INFO"
+    setACL "${d}" "dashboard"
+  else
+    logThis "Confirmed published dashboard ${d} in remote and is not in the repo." "INFO"
+    logThis "Deleting published dashboard ${d} due to it not being in a file." "INFO"
+    # Delete functionality places dashboard in trash for 30 days to be able to be recovered.
+    deleteDashboard "${d}"
+  fi
 done
 
+# source "${baseDir}/lib/actionProcessStagedDashboards.sh"

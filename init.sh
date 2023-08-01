@@ -64,3 +64,6 @@ then
   apiToken=$CONF_aria_apiToken
   unset CONF_aria_apiToken
 fi
+
+# shellcheck disable=SC1090
+source "${1}"

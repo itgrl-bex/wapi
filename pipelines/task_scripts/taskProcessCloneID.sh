@@ -2,20 +2,13 @@
 
 ##################################################################################
 #
-# Purpose is to provide task for use with Pipelines
+# Task script for pipelines to be called by init.sh
 #
 ##################################################################################
 
-## Load init to load the config
-# shellcheck source="../../init.sh"
-source "../../init.sh"
-unset myDir
-
 ## Load common functions
-# shellcheck source="../../lib/common.sh"
-source "../../lib/common.sh"
-# shellcheck source="../../lib/libDashboard.sh"
-source "../../lib/libDashboard.sh"
+source "${baseDir}/lib/common.sh"
+source "${baseDir}/lib/libDashboard.sh"
 
 # Loop through dashboard files in dashboard dir
 # shellcheck disable=SC2154 # Reusable code for tasks, the config with this is part of init.

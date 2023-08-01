@@ -1,7 +1,7 @@
 ---
 REPO:
   # Coded for GitHub only at the moment. This and associated library are just a skeleton.
-  gitlab:
+  git:
     api:
       # Url to reach the GitHub server api
       url:

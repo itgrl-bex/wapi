@@ -1,2 +1,2 @@
-Automation found ${msgType} ${msgID} ${issue} ${author} when searching for tag ${tag}.
+Automation found ${msgType} ${msgID} edited by ${author} when searching for tag \"${tag}\".
 
