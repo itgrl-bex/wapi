@@ -35,33 +35,35 @@ function getDashboardID {
   fi
 }
 
-function extractResponse {
-  createDir "${2}"
-  logThis "Extracting JSON response body from file." "INFO"
-  local _FILENAME
-  _FILENAME=$(basename "${1}")
-  logThis "Executing the command [jq -r '.response' ${1} > ${2}/${_FILENAME}.response]" "DEBUG"
-  jq -r '.response' "${1}" > "${2}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${1}." "CRITICAL"
-  logThis "Extracted JSON response body from file ${1} and storing it in the directory ${2}." "DEBUG"
-}
+# Moved to common.sh
+# function extractResponse {
+#   createDir "${2}"
+#   logThis "Extracting JSON response body from file." "INFO"
+#   local _FILENAME
+#   _FILENAME=$(basename "${1}")
+#   logThis "Executing the command [jq -r '.response' ${1} > ${2}/${_FILENAME}.response]" "DEBUG"
+#   jq -r '.response' "${1}" > "${2}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${1}." "CRITICAL"
+#   logThis "Extracted JSON response body from file ${1} and storing it in the directory ${2}." "DEBUG"
+# }
 
-function scrubResponse {
-  logThis "Scrubbing response to remove metadata." "INFO"
-  logThis "Executing command: [cat ${1}.response | jq \"del(.disableRefreshInLiveMode) | del(.hideChartWarning) | \
-  del(.creatorId) | del(.updaterId) | del(.createdEpochMillis) | del(.updatedEpochMillis) | \
-  del(.deleted) | del(.numCharts) | del(.numFavorites) | del(.favorite)\" > ${1}]" "DEBUG"
-#  cat "${1}".response | \
-  jq "del(.disableRefreshInLiveMode) | \
-  del(.hideChartWarning) | \
-  del(.creatorId) | \
-  del(.updaterId) | \
-  del(.createdEpochMillis) | \
-  del(.updatedEpochMillis) | \
-  del(.deleted) | \
-  del(.numCharts) | \
-  del(.numFavorites) | \
-  del(.favorite)" < "${1}.response" > "${1}" && logThis "Successfully scrubbed JSON response body." "INFO" || logThis "Could not scrub JSON response body from file ${1}.response." "CRITICAL"
-}
+# Moved to common.sh
+# function scrubResponse {
+#   logThis "Scrubbing response to remove metadata." "INFO"
+#   logThis "Executing command: [cat ${1}.response | jq \"del(.disableRefreshInLiveMode) | del(.hideChartWarning) | \
+#   del(.creatorId) | del(.updaterId) | del(.createdEpochMillis) | del(.updatedEpochMillis) | \
+#   del(.deleted) | del(.numCharts) | del(.numFavorites) | del(.favorite)\" > ${1}]" "DEBUG"
+# #  cat "${1}".response | \
+#   jq "del(.disableRefreshInLiveMode) | \
+#   del(.hideChartWarning) | \
+#   del(.creatorId) | \
+#   del(.updaterId) | \
+#   del(.createdEpochMillis) | \
+#   del(.updatedEpochMillis) | \
+#   del(.deleted) | \
+#   del(.numCharts) | \
+#   del(.numFavorites) | \
+#   del(.favorite)" < "${1}.response" > "${1}" && logThis "Successfully scrubbed JSON response body." "INFO" || logThis "Could not scrub JSON response body from file ${1}.response." "CRITICAL"
+# }
 
 function getDashboard {
   logThis "Checking dashboard retrieval output directory ${sourceDir}." "INFO"

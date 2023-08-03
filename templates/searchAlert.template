@@ -1,0 +1,16 @@
+{
+  "limit": 1000,
+  "offset": 0,
+  "query": [
+    {
+      "key": "title",
+      "value": "string",
+      "values": [
+        "${name}"
+      ],
+      "negated": false,
+      "start": 0,
+      "end": 0
+    }
+  ]
+}

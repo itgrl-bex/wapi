@@ -104,6 +104,16 @@ function logThis() {
     esac
 }
 
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
+
 function help {
   echo "Usage: $0 [ -i dashboardID ] [ -s SOURCE_dashboardID ] [ -t apiToken ]" 1>&2 
   echo "
@@ -126,6 +136,16 @@ function help {
   "
 }
 
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
+
 function validateYAML {
   if [ -z "${1}" ];
   then
@@ -143,6 +163,16 @@ function validateYAML {
   fi
 }
 
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
+
 function validateJSON {
   if [ -z "${1}" ];
   then
@@ -152,6 +182,16 @@ function validateJSON {
   _version=$(jq --version)
   jq empty "${1}"
 }
+
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
 
 function compareFile {
   logThis "Comparing scrubbed files" "INFO"
@@ -178,6 +218,16 @@ function compareFile {
     return 0
   fi
 }
+
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
 
 function getACL {
  local id="${1}"
@@ -233,6 +283,16 @@ function getACL {
     return 1
   fi
 }
+
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
 
 function setACL {
  local id="${1}"
@@ -315,6 +375,16 @@ function setACL {
 
 }
 
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
+
 # Migrating to common function from libDashboard.sh
 function setTag {
  local id="${1}"
@@ -362,6 +432,16 @@ function setTag {
   fi
 }
 
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
+
 function searchTag {
   local apiType=$1
   local tag=$2
@@ -406,6 +486,16 @@ function searchTag {
     }
   }" | jq -r '.response.items' | jq -r '.[].id'
 }
+
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
 
 function removeTag {
  local id="${1}"
@@ -453,6 +543,16 @@ function removeTag {
   fi
 }
 
+##############################################################################
+## Function Name: 
+## Purpose:
+##
+## Inputs:
+## 
+## Outputs:
+##
+##############################################################################
+
 function createDir {
   local dir="${1}"
   if [ -z "${dir}" ];
@@ -466,6 +566,90 @@ function createDir {
   else
     logThis "Executing the command[mkdir ${dir}]" "DEBUG"
     mkdir -p "${dir}" && logThis "Successfully created ${dir}." "INFO" || logThis "Error creating directory ${dir}." "CRITICAL"
+  fi
+}
+
+##############################################################################
+## Function Name: extractResponse
+## Purpose: This function is used to extract the json response body from an
+##          API response.
+##
+## Inputs:
+##   ${1} - first positional parameter passed will be the json file to 
+##          extract the response, the filename.json is appended with 
+##          the extension .response.  Pass the filepath without .response
+##   ${2} - second positional parameter will be the directory where to store
+##          the extracted response.
+##
+## Outputs:
+##          When extracting the response, the filename.json is appended with 
+##          the extension .response.  The file is stored in the directory 
+##          passed in for parameter #2.
+##
+## Example:
+##          extractResponse "/tmp/dashboard/mytestdashboard.json" \
+##           "/tmp/dashboard/responses/"
+##
+##############################################################################
+
+function extractResponse {
+  createDir "${2}"
+  logThis "Extracting JSON response body from file." "INFO"
+  local _FILENAME
+  _FILENAME=$(basename "${1}")
+  logThis "Executing the command [jq -r '.response' ${1} > ${2}/${_FILENAME}.response]" "DEBUG"
+  jq -r '.response' "${1}" > "${2}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${1}." "CRITICAL"
+  logThis "Extracted JSON response body from file ${1} and storing it in the directory ${2}." "DEBUG"
+}
+
+##################################################################################
+## Function Name: scrubResponse
+## Purpose: Process the json response body primarily to delete variant data for
+##          file comparison. Such data may be last modified time, last updated by,
+##          created by, etc.
+##
+## Inputs:
+##   ${1} - first positional parameter passed will be the json file to scrub.
+##          When extracting the response, the filename.json is appended with 
+##          the extension .response.  Pass the filepath without .response
+##   ${2} - second positional parameter will be the body of items to scrub out.
+##
+## Outputs:
+##          When extracting the response, the filename.json is appended with 
+##          the extension .response.  The output is the file without .response.
+##
+## Example:
+## 
+##   scrubBody="del(.disableRefreshInLiveMode) | \
+##     del(.hideChartWarning) | \
+##     del(.creatorId) | \
+##     del(.updaterId) | \
+##     del(.createdEpochMillis) | \
+##     del(.updatedEpochMillis) | \
+##     del(.deleted) | \
+##     del(.numCharts) | \
+##     del(.numFavorites) | \
+##     del(.favorite)"
+## 
+##  scrubResponse "/tmp/dashboard/responses/mytestdashboard.json" "${scrubBody}"
+##
+##  The function would take the input from the file 
+##    '/tmp/dashboard/responses/mytestdashboard.json.response'
+##  and then remove the deletions in the scrubBody variable and save the file as
+##    '/tmp/dashboard/responses/mytestdashboard.json'
+##
+##################################################################################
+
+function scrubResponse {
+  local jsonFile="${1}"
+  local scrubBody="${2}"
+  logThis "Scrubbing response to remove metadata." "INFO"
+  logThis "Executing command: [jq \"${scrubBody}\" < \"${jsonFile}.response\" > ${jsonFile}]" "DEBUG"
+  if (jq "${scrubBody}" < "${jsonFile}.response" > "${jsonFile}");
+  then
+    logThis "Successfully scrubbed JSON response body." "INFO" \
+  else
+    logThis "Could not scrub JSON response body from file ${jsonFile}.response." "CRITICAL"
   fi
 }
 
