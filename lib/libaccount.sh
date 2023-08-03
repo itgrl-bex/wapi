@@ -8,17 +8,6 @@
 
 source ${baseDir}/lib/common.sh
 
-# # Deprecated for createDir function
-# function createAccountDir {
-#   logThis "Checking ${accountDir}" "INFO"
-#   if [ -d $accountDir ];
-#   then
-#     logThis "Directory ${accountDir} exists" "DEBUG"
-#   else
-#     logThis "Executing the command[mkdir ${accountDir}]" "DEBUG"
-#     mkdir $accountDir && logThis "Successfully created ${accountDir}." "INFO" || logThis "Error creating directory ${accountDir}." "CRITICAL"
-#   fi
-# }
 
 function getGroups {
   # This function is to get and process group list so that local copy of group name and id is present.
@@ -26,7 +15,7 @@ function getGroups {
   logThis "Retrieving group list." "INFO"
   logThis "Executing command:  [curl -X 'GET' -o $accountDir/response.json \"${CONF_aria_operationsUrl}/api/v2/usergroup\" -H 'accept: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
   curl -X 'GET' -o $accountDir/response.json \
-    "${CONF_aria_operationsUrl}/api/v2/usergroup/${groupID}" \
+    "${CONF_aria_operationsUrl}/api/v2/usergroup" \
     -H 'accept: application/json' \
     -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully retrieved group list." "INFO" || logThis "Could not retrieve group list." "CRITICAL"
   logThis "Processing group list." "INFO"
@@ -37,3 +26,17 @@ function getGroups {
   rm -f $accountDir/response.json
 }
 
+function searchGroup {
+  local name="${1}"
+  local data
+  data=$(eval "cat <<EOF
+$(<templates/searchGroup.template)
+EOF
+" 2> /dev/null)
+  curl -X 'POST' \
+    "${CONF_aria_operationsUrl}/api/v2/search/usergroup" \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer  ${apiToken}" \
+    -d "@${data}" | jq -r '.response.items' | jq -r '.[].id'
+}

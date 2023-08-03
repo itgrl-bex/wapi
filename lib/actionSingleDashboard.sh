@@ -16,6 +16,17 @@ source common.sh
 
 source libDashboard.sh
 
+scrubBody=scrubBody="del(.disableRefreshInLiveMode) | \
+  del(.hideChartWarning) | \
+  del(.creatorId) | \
+  del(.updaterId) | \
+  del(.createdEpochMillis) | \
+  del(.updatedEpochMillis) | \
+  del(.deleted) | \
+  del(.numCharts) | \
+  del(.numFavorites) | \
+  del(.favorite)"
+
 _FILENAME="${dashboardID}.json"
 getDashboardID ${_FILENAME} 
 # Let's make sure the extracted dashboard ID and the file dashboard ID match.
@@ -46,11 +57,11 @@ else
   fi
 fi
 
-scrubResponse "${responseDir}/${_FILENAME}"
+scrubResponse "${responseDir}/${_FILENAME}" "${scrubBody}"
 
 getDashboard "${dashboardID}"
 extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
-scrubResponse ${sourceDir}/${_FILENAME}
+scrubResponse ${sourceDir}/${_FILENAME} "${scrubBody}"
 if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
 then
   pushDashboard "${dashboardID}"

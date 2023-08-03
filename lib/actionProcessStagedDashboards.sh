@@ -18,6 +18,17 @@ source "${baseDir}/lib/libDashboard.sh"
 # shellcheck disable=SC1090 disable=SC2154
 source "${baseDir}/lib/lib${CONF_repoManagementPlatform}.sh"
 
+scrubBody=scrubBody="del(.disableRefreshInLiveMode) | \
+  del(.hideChartWarning) | \
+  del(.creatorId) | \
+  del(.updaterId) | \
+  del(.createdEpochMillis) | \
+  del(.updatedEpochMillis) | \
+  del(.deleted) | \
+  del(.numCharts) | \
+  del(.numFavorites) | \
+  del(.favorite)"
+
 # Check to see if single repo or split code and data repos
 if "${REPO_git_dataRepo}";
 then
@@ -99,7 +110,7 @@ do
   # shellcheck disable=SC2034 # This is used later in templates.
   author=$(jq -r ".response.updaterId"  "${filename}")
 
-  scrubResponse "${responseDir}/${_FILENAME}"
+  scrubResponse "${responseDir}/${_FILENAME}" "${scrubBody}"
 
   if (jq -r ".tags.customerTags" "${responseDir}/${_FILENAME}" | grep "${CONF_dashboard_staged_tag}");
   then

@@ -16,6 +16,17 @@ source "${baseDir}/lib/common.sh"
 
 source "${baseDir}/lib/libDashboard.sh"
 
+scrubBody=scrubBody="del(.disableRefreshInLiveMode) | \
+  del(.hideChartWarning) | \
+  del(.creatorId) | \
+  del(.updaterId) | \
+  del(.createdEpochMillis) | \
+  del(.updatedEpochMillis) | \
+  del(.deleted) | \
+  del(.numCharts) | \
+  del(.numFavorites) | \
+  del(.favorite)"
+
 # Loop through dashboard files in dashboard dir
 for filename in "${dashboardDir}"/*.json; do
   logThis "Processing ${filename}" "INFO"
@@ -39,13 +50,13 @@ for filename in "${dashboardDir}"/*.json; do
     fi
   fi
 
-  scrubResponse "${responseDir}/${_FILENAME}"
+  scrubResponse "${responseDir}/${_FILENAME}" "${scrubBody}"
 
   # Failing
   if getDashboard;
   then
     extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
-    scrubResponse "${sourceDir}/${_FILENAME}"
+    scrubResponse "${sourceDir}/${_FILENAME}" "${scrubBody}"
     if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
     then
       pushDashboard "${dashboardID}"
