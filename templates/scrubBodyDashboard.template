@@ -1,0 +1,10 @@
+del(.disableRefreshInLiveMode) | \
+del(.hideChartWarning) | \
+del(.creatorId) | \
+del(.updaterId) | \
+del(.createdEpochMillis) | \
+del(.updatedEpochMillis) | \
+del(.deleted) | \
+del(.numCharts) | \
+del(.numFavorites) | \
+del(.favorite)

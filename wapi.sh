@@ -41,9 +41,6 @@ then
   accountDir="${baseDir}/${CONF_account_dir}"
   alertDir="${baseDir}/${CONF_alert_dir}"
 else
-  echo "####################################################################"
-  echo "${CONF_dataPath}"
-  createDir "${CONF_dataPath}"
   dashboardDir="${CONF_dataPath}/${CONF_dashboard_dir}"
   sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
   responseDir="${CONF_tmpDir}/dashboards/responses"

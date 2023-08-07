@@ -130,30 +130,32 @@ function pushDashboard {
     -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully pushed dashboard ${dashboardID}." "INFO" || logThis "Could not pushed dashboard ${dashboardID}." "CRITICAL"
 }
 
-function processCloneFileName {
-  logThis "Stripping working copy Clone tags from filename ${1} before publishing." "INFO"
-  echo 'file process'
-  newFILENAME=$(echo "${_FILENAME}" | awk -F '-Clone' '{print $1}').json
-  logThis "Rename the file ${responseDir}/${_FILENAME}.response to ${responseDir}/${newFILENAME}.response" "INFO"
-  echo "${_FILENAME}"
-  echo "${newFILENAME}"
-  mv "${responseDir}/${_FILENAME}.response" "${responseDir}/${newFILENAME}.response"
-  _FILENAME="${newFILENAME}"
-  unset newFILENAME
+# Moved to common.sh
+# function processCloneFileName {
+#   logThis "Stripping working copy Clone tags from filename ${1} before publishing." "INFO"
+#   echo 'file process'
+#   newFILENAME=$(echo "${_FILENAME}" | awk -F '-Clone' '{print $1}').json
+#   logThis "Rename the file ${responseDir}/${_FILENAME}.response to ${responseDir}/${newFILENAME}.response" "INFO"
+#   echo "${_FILENAME}"
+#   echo "${newFILENAME}"
+#   mv "${responseDir}/${_FILENAME}.response" "${responseDir}/${newFILENAME}.response"
+#   _FILENAME="${newFILENAME}"
+#   unset newFILENAME
 
-}
+# }
 
-function processCloneID {
-  logThis "Stripping working copy Clone tags from file ${1} before publishing." "INFO"
-  local _dashboardID
-  _dashboardID=$(echo "${dashboardID}" | awk -F '-Clone' '{print $1}')
-  logThis "Changing (dashboardID) in file from ${dashboardID} to ${_dashboardID} in file ${_FILENAME}." "DEBUG"
-  sed -i '.clone' "s/${dashboardID}/${_dashboardID}/g" "${responseDir}/${_FILENAME}.response"
-  logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"
-  sed -i '' -E 's/ \(Clone\)//' "${responseDir}/${_FILENAME}.response"
-  logThis "Changing (dashboardID) variable from ${dashboardID} to ${_dashboardID}." "DEBUG"
-  dashboardID="${_dashboardID}"
-}
+# Moved to common.sh
+# function processCloneID {
+#   logThis "Stripping working copy Clone tags from file ${1} before publishing." "INFO"
+#   local _dashboardID
+#   _dashboardID=$(echo "${dashboardID}" | awk -F '-Clone' '{print $1}')
+#   logThis "Changing (dashboardID) in file from ${dashboardID} to ${_dashboardID} in file ${_FILENAME}." "DEBUG"
+#   sed -i '.clone' "s/${dashboardID}/${_dashboardID}/g" "${responseDir}/${_FILENAME}.response"
+#   logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"
+#   sed -i '' -E 's/ \(Clone\)//' "${responseDir}/${_FILENAME}.response"
+#   logThis "Changing (dashboardID) variable from ${dashboardID} to ${_dashboardID}." "DEBUG"
+#   dashboardID="${_dashboardID}"
+# }
 
 function deleteDashboard {
   logThis "Deleting Dashboard ${1}" "INFO"

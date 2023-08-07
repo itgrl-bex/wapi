@@ -95,6 +95,18 @@ CONF:
     staged:
       workingDir: '/staged/alerts'
       tag: 'staged.alert'
+      maintenancewindow:
+        title: "Staged Alert Changes maintenance window"
+        reason: "To prevent duplicate alerts when changes to an alert are staged."
+        create: true
+        jsonTemplate: 'templates/maintenanceWindow.json.template'
+    developing:
+      tag: 'developing.alert'
+      maintenancewindow:
+        title: "Developing Alert Changes maintenance window"
+        reason: "To prevent duplicate alerts when changes to an alert are being developed."
+        create: true
+        jsonTemplate: 'templates/maintenanceWindow.json.template'
     published:
       tag: 'published.alert'
       # Optional to include ACLs for Alert functions

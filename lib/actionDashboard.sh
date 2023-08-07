@@ -16,16 +16,7 @@ source "${baseDir}/lib/common.sh"
 
 source "${baseDir}/lib/libDashboard.sh"
 
-scrubBody=scrubBody="del(.disableRefreshInLiveMode) | \
-  del(.hideChartWarning) | \
-  del(.creatorId) | \
-  del(.updaterId) | \
-  del(.createdEpochMillis) | \
-  del(.updatedEpochMillis) | \
-  del(.deleted) | \
-  del(.numCharts) | \
-  del(.numFavorites) | \
-  del(.favorite)"
+scrubBody="$(cat \"${baseDir}/templates/scrubBodyDashboard.template\")"
 
 # Loop through dashboard files in dashboard dir
 for filename in "${dashboardDir}"/*.json; do
@@ -35,14 +26,14 @@ for filename in "${dashboardDir}"/*.json; do
   if [[ "${_FILENAME}" == *"-Clone"* ]];
   then
     logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-    processCloneFileName "${_FILENAME}"
+    processCloneFileName "${_FILENAME}" "${responseDir}"
     # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-    processCloneID "${_FILENAME}"
+    dashboardID=$(processCloneID 'dashboard' "${dashboardID}" "${_FILENAME}" "${responseDir}")
   else
     if [[ "${dashboardID}" == *"-Clone"* ]];
     then
       logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-      processCloneID "${_FILENAME}"
+      dashboardID=$(processCloneID 'dashboard' "${dashboardID}" "${_FILENAME}" "${responseDir}")
     else
       echo "Not a clone."
       echo "${_FILENAME}"
