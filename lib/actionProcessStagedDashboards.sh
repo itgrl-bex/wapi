@@ -18,7 +18,7 @@ source "${baseDir}/lib/libDashboard.sh"
 # shellcheck disable=SC1090 disable=SC2154
 source "${baseDir}/lib/lib${CONF_repoManagementPlatform}.sh"
 
-scrubBody="$(cat \"${baseDir}/templates/scrubBodyDashboard.template\")"
+scrubBody="$(cat ${baseDir}/templates/scrubBodyDashboard.template)"
 
 # Check to see if single repo or split code and data repos
 if "${REPO_git_dataRepo}";
@@ -72,13 +72,16 @@ sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
 responseDir="${CONF_tmpDir}/dashboards/responses"
 dashboardDir="${dataPath}/${CONF_dashboard_dir}"
 
-for d in $(searchTag 'dashboard' "${CONF_dashboard_staged_tag}");
+foundDashboards=($(searchTag 'dashboard' "${CONF_dashboard_staged_tag}"))
+
+for d in "${foundDashboards[@]}";
 do
   dashboardID="${d}"
   getDashboard "${d}"
   filename="${sourceDir}/${d}.json"
   _FILENAME=$(basename "${filename}")
   getDashboardID "${filename}"
+  
   if [[ "${_FILENAME}" == *"-Clone"* ]];
   then
     logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
@@ -114,6 +117,7 @@ do
   then
     # shellcheck disable=SC2034 # This is used later in templates.
     issueKey=$(jq -r ".tags.customerTags" "${responseDir}/${_FILENAME}" | grep "${REPO_tracker_issueTagPrefix}" | awk -F '"' '{print $2}' | awk -F '.' '{print $2}')
+    sed -i '' "s/${CONF_dashboard_staged_tag}/${CONF_dashboard_published_tag}/g" "${responseDir}/${_FILENAME}"
   else
     logThis "${REPO_tracker_issueTagPrefix} issue key not set. It is required to set the issue to link everything together." "ERROR"
     removeTag "${d}" 'dashboard' "${CONF_dashboard_staged_tag}"
@@ -124,6 +128,11 @@ do
   # Copy file to dataDir to process PR
   if validateJSON "${responseDir}/${_FILENAME}";
   then
+    ## Remove issuekey before comparing.
+    cp "${responseDir}/${_FILENAME}" "${responseDir}/${_FILENAME}.removeissuekey"
+    echo "Running command [jq \"del(.tags.customerTags[] | select(. | contains(\"${REPO_tracker_issueTagPrefix}.\")))\" \"${responseDir}/${_FILENAME}.removeissuekey\" > \"${responseDir}/${_FILENAME}\"]"
+    jq "del(.tags.customerTags[] | select(. | contains(\"${REPO_tracker_issueTagPrefix}.\")))" "${responseDir}/${_FILENAME}.removeissuekey" > "${responseDir}/${_FILENAME}"
+
     createBranch 'dashboard' "${d}" "${author}" "${gitBranchNameTemplate}" "${issueKey}" "${CONF_dashboard_staged_tag}"
     if [ -f "${dashboardDir}/${_FILENAME}" ];
     then

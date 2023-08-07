@@ -16,7 +16,7 @@ source common.sh
 
 source libDashboard.sh
 
-scrubBody="$(cat \"${baseDir}/templates/scrubBodyDashboard.template\")"
+scrubBody="$(cat ${baseDir}/templates/scrubBodyDashboard.template)"
 
 _FILENAME="${dashboardID}.json"
 getDashboardID ${_FILENAME} 

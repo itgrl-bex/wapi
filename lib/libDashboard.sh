@@ -18,9 +18,7 @@ function getDashboardID {
     logThis "Required parameter #2 'responseDir' missing." "SEVERE"
   fi
   logThis "Retrieving dashboardID" "INFO"
-  local _OUTPUT
-  _OUTPUT=$(jq -r '.response' "${1}")
-  if [[ -z "${_OUTPUT}" ]];
+  if grep '"response":' "${1}";
   then
     dashboardID=$(jq -r '.response.id' "${1}")
     echo "${dashboardID}"
@@ -28,42 +26,12 @@ function getDashboardID {
   else
     createDir "${responseDir}"
     dashboardID=$(jq -r '.id' "${1}")
-    logThis "Copying dashboard to response file since the response body has been extracted already." "INFO"
+    logThis "Since the json response has been extracted, we are now sorting the response." "INFO"
     local _FILENAME
     _FILENAME=$(basename "${1}")
-    cp "${1}" "${responseDir}/${_FILENAME}.response"
+    jq -S . "${1}" > "${responseDir}/${_FILENAME}.response"
   fi
 }
-
-# Moved to common.sh
-# function extractResponse {
-#   createDir "${2}"
-#   logThis "Extracting JSON response body from file." "INFO"
-#   local _FILENAME
-#   _FILENAME=$(basename "${1}")
-#   logThis "Executing the command [jq -r '.response' ${1} > ${2}/${_FILENAME}.response]" "DEBUG"
-#   jq -r '.response' "${1}" > "${2}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${1}." "CRITICAL"
-#   logThis "Extracted JSON response body from file ${1} and storing it in the directory ${2}." "DEBUG"
-# }
-
-# Moved to common.sh
-# function scrubResponse {
-#   logThis "Scrubbing response to remove metadata." "INFO"
-#   logThis "Executing command: [cat ${1}.response | jq \"del(.disableRefreshInLiveMode) | del(.hideChartWarning) | \
-#   del(.creatorId) | del(.updaterId) | del(.createdEpochMillis) | del(.updatedEpochMillis) | \
-#   del(.deleted) | del(.numCharts) | del(.numFavorites) | del(.favorite)\" > ${1}]" "DEBUG"
-# #  cat "${1}".response | \
-#   jq "del(.disableRefreshInLiveMode) | \
-#   del(.hideChartWarning) | \
-#   del(.creatorId) | \
-#   del(.updaterId) | \
-#   del(.createdEpochMillis) | \
-#   del(.updatedEpochMillis) | \
-#   del(.deleted) | \
-#   del(.numCharts) | \
-#   del(.numFavorites) | \
-#   del(.favorite)" < "${1}.response" > "${1}" && logThis "Successfully scrubbed JSON response body." "INFO" || logThis "Could not scrub JSON response body from file ${1}.response." "CRITICAL"
-# }
 
 function getDashboard {
   logThis "Checking dashboard retrieval output directory ${sourceDir}." "INFO"
@@ -73,7 +41,7 @@ function getDashboard {
   else
     mkdir -p "${sourceDir}" && logThis "Successfully created ${sourceDir}." "INFO" || logThis "Error creating directory ${sourceDir}." "CRITICAL"
   fi
-  logThis "Retrieving Dashboard ${dashboardID}." "INFO"
+  logThis "Retrieving Dashboard '${dashboardID}'." "INFO"
   logThis "Executing command:  [curl -X 'GET' -o ${sourceDir}/${dashboardID}.json \"${CONF_aria_operationsUrl}/api/v2/dashboard/${dashboardID}\" -H 'accept: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
   if curl -X 'GET' -o "${sourceDir}/${dashboardID}.json" \
     "${CONF_aria_operationsUrl}/api/v2/dashboard/${dashboardID}" \

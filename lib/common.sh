@@ -632,8 +632,8 @@ function createDir {
 
 ##############################################################################
 ## Function Name: extractResponse
-## Purpose: This function is used to extract the json response body from an
-##          API response.
+## Purpose: This function is used to extract the sorted json response body 
+##          from an API response.
 ##
 ## Inputs:
 ##   ${1} - first positional parameter passed will be the json file to 
@@ -660,8 +660,8 @@ function extractResponse {
   logThis "Extracting JSON response body from file." "INFO"
   local _FILENAME
   _FILENAME=$(basename "${file}")
-  logThis "Executing the command [jq -r '.response' ${file} > ${dir}/${_FILENAME}.response]" "DEBUG"
-  jq -r '.response' "${file}" > "${dir}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${file}." "CRITICAL"
+  logThis "Executing the command [jq -S '.response' ${file} > ${dir}/${_FILENAME}.response]" "DEBUG"
+  jq -S '.response' "${file}" > "${dir}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${file}." "CRITICAL"
   logThis "Extracted JSON response body from file ${file} and storing it in the directory ${dir}." "DEBUG"
 }
 
@@ -705,12 +705,12 @@ function extractResponse {
 
 function scrubResponse {
   local jsonFile="${1}"
-  local scrubBody="${2}"
+  local myScrubBody="${2}"
   logThis "Scrubbing response to remove metadata." "INFO"
-  logThis "Executing command: [jq \"${scrubBody}\" < \"${jsonFile}.response\" > ${jsonFile}]" "DEBUG"
-  if (jq "${scrubBody}" < "${jsonFile}.response" > "${jsonFile}");
+  logThis "Executing command: [jq \"${myScrubBody}\" < \"${jsonFile}.response\" > ${jsonFile}]" "DEBUG"
+  if jq "${myScrubBody}" < "${jsonFile}.response" > "${jsonFile}";
   then
-    logThis "Successfully scrubbed JSON response body." "INFO" \
+    logThis "Successfully scrubbed JSON response body." "INFO" 
   else
     logThis "Could not scrub JSON response body from file ${jsonFile}.response." "CRITICAL"
   fi
@@ -739,7 +739,6 @@ function processCloneFileName {
   local dir="${2}"
 
   logThis "Stripping working copy Clone tags from filename ${file} before publishing." "INFO"
-  echo 'file process'
   newFILENAME=$(echo "${file}" | awk -F '-Clone' '{print $1}').json
   logThis "Rename the file ${dir}/${file}.response to ${dir}/${newFILENAME}.response" "INFO"
   mv "${dir}/${file}.response" "${dir}/${newFILENAME}.response"
@@ -785,7 +784,7 @@ function processCloneID {
   logThis "Changing (${type}ID) in file from ${id} to ${_ID} in file ${file}." "DEBUG"
   sed -i '.clone' "s/${id}/${_ID}/g" "${dir}/${file}.response"
   logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"
-  sed -i '' -E 's/ \(Clone//' "${dir}/${file}.response"
+  sed -i '' -E 's/ \(Clone.*$/",/' "${dir}/${file}.response"
   logThis "Changing (${type}ID) variable from ${id} to ${_ID}." "DEBUG"
   echo "${_ID}"
 }
