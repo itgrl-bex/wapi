@@ -1,0 +1,17 @@
+{
+  "limit": 1000,
+  "offset": 0,
+  "query": [
+    {
+      "key": "tags.customerTags",
+      "value": "string",
+      "values": [
+        "${tag}"
+      ],
+      "matchingMethod": "CONTAINS",
+      "negated": false,
+      "start": 0,
+      "end": 0
+    }
+  ]
+}

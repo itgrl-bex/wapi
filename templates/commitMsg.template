@@ -1,2 +1,2 @@
-Automation found ${msgType} ${msgID} edited by ${author} when searching for tag \"${tag}\".
+WAPI Automation found ${msgType} ${msgID} edited by ${author} when searching for tag \"${tag}\".
 

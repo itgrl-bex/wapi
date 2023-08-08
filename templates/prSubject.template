@@ -1,1 +1,1 @@
-AUTO: Found ${msgType} ${msgID} while searching for tag \"${tag}\"
+WAPI-AUTO: Found ${msgType} ${msgID} while searching for tag \"${tag}\"

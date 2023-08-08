@@ -67,16 +67,16 @@ $(<${template})
 EOF
 " 2> /dev/null)
 
-  # TODO: Check to see if branch exists before creating.
-  # TODO: Set flag to create PR if branch does not exist
- 
+  # Make sure we are in the repo directory.
+  cd "${dataPath}" || echo 'failed to change directories'
+
   if git rev-parse --verify "${branchName}" 2>/dev/null;
   then 
-    cd "${dataPath}" || echo 'failed to change directories'
+    logThis "Branch ${branchName} exists, no PR needed." "INFO"
     git checkout "${branchName}"
     needPR=false
   else
-    cd "${dataPath}" || echo 'failed to change directories'
+    logThis "Branch ${branchName} does not exist, PR is needed." "INFO"
     git checkout -b "${branchName}"
     needPR=true
   fi

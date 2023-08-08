@@ -109,6 +109,11 @@ function logThis() {
 ## Purpose:
 ##
 ## Inputs:
+##   ${1} - 
+##          
+##          
+##   ${2} - 
+## 
 ## 
 ## Outputs:
 ##
@@ -141,6 +146,11 @@ function help {
 ## Purpose:
 ##
 ## Inputs:
+##   ${1} - 
+##          
+##          
+##   ${2} - 
+## 
 ## 
 ## Outputs:
 ##
@@ -168,6 +178,11 @@ function validateYAML {
 ## Purpose:
 ##
 ## Inputs:
+##   ${1} - 
+##          
+##          
+##   ${2} - 
+## 
 ## 
 ## Outputs:
 ##
@@ -188,6 +203,11 @@ function validateJSON {
 ## Purpose:
 ##
 ## Inputs:
+##   ${1} - 
+##          
+##          
+##   ${2} - 
+## 
 ## 
 ## Outputs:
 ##
@@ -224,6 +244,11 @@ function compareFile {
 ## Purpose:
 ##
 ## Inputs:
+##   ${1} - 
+##          
+##          
+##   ${2} - 
+## 
 ## 
 ## Outputs:
 ##
@@ -285,10 +310,14 @@ function getACL {
 }
 
 ##############################################################################
-## Function Name: 
-## Purpose:
+## Function Name: setACL
+## Purpose: To set the ACL on an object.
 ##
 ## Inputs:
+##   ${1} - The first positional parameter is the json 'id' of the object to
+##          set the ACL on.
+##   ${2} - The second positional parameter is the apiType to execute. Such as
+##          'dashboard', 'alert', or another API type.
 ## 
 ## Outputs:
 ##
@@ -376,12 +405,21 @@ function setACL {
 }
 
 ##############################################################################
-## Function Name: 
-## Purpose:
+## Function Name: setTag
+## Purpose: To set a tag on an object
 ##
 ## Inputs:
+##   ${1} - The first positional parameter is the json 'id' of the object to
+##          set the tag on.
+##   ${2} - The second positional parameter is the apiType to execute. Such as
+##          'dashboard', 'alert', or another API type.
+##   ${3} - The third positional parameter is the tag that should be added.
 ## 
 ## Outputs:
+##          The following return values are returned:
+##          0 - Successfully added the tag
+##          1 - Failed to add the tag
+##          3 - The tag was already set
 ##
 ##############################################################################
 
@@ -424,21 +462,32 @@ function setTag {
   then
     logThis "The ${tag} tag is already set in the ${apiType} ${id}." "INFO"
     logThis "The ${apiType} ${id} has tags set ${result}." "DEBUG"
+    return 3
   else
-    curl -X 'PUT' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag/${tag}" \
-    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${apiToken}" && \
-    logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO" || \
-    logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
+    if (curl -X 'PUT' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag/${tag}" \
+    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${apiToken}");
+    then
+      logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO"
+      return 0
+    else
+      logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
+      return 1
+    fi
   fi
 }
 
 ##############################################################################
-## Function Name: 
-## Purpose:
+## Function Name: searchTag
+## Purpose: This purpose of this function is to search for items matching the
+##          specified tag of the specified API type such as alert or dashboard.
 ##
 ## Inputs:
+##   ${1} - The first positional parameter is the apiType to execute. Such as
+##          'dashboard', 'alert', or another API type.
+##   ${2} - The second positional parameter is the tag that should be searched. 
 ## 
 ## Outputs:
+##      The function returns an array of IDs with the tag.
 ##
 ##############################################################################
 
@@ -458,42 +507,36 @@ function searchTag {
     logThis "The function searchTag requires 2 arguments in positional order. \
      #1 the apiType to query such as 'dashboard'\
      #2 the tag that should be searched such as 'published.dashboard'" "Error"
-  fi  
+  fi
+  local data
+  data=$(eval "cat <<EOF
+$(<${baseDir}/templates/searchTag.template)
+EOF
+" 2> /dev/null)
   curl -X 'POST' \
     "${CONF_aria_operationsUrl}/api/v2/search/${apiType}" \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
     -H "Authorization: Bearer  ${apiToken}" \
-    -d "{
-    \"limit\": 1000,
-    \"offset\": 0,
-    \"query\": [
-      {
-        \"key\": \"tags.customerTags\",
-        \"value\": \"string\",
-        \"values\": [
-          \"${tag}\"
-        ],
-        \"matchingMethod\": \"CONTAINS\",
-        \"negated\": false,
-        \"start\": 0,
-        \"end\": 0
-      }
-    ],
-    \"sort\": {
-      \"ascending\": true,
-      \"field\": \"id\"
-    }
-  }" | jq -r '.response.items' | jq -r '.[].id'
+    -d "${data}" | jq -r '.response.items' | jq -r '.[].id'
 }
 
 ##############################################################################
-## Function Name: 
-## Purpose:
+## Function Name: removeTag
+## Purpose: This function is to remove a tag from an object.
 ##
 ## Inputs:
+##   ${1} - The first positional parameter is the json 'id' of the object to
+##          remove the tag from.
+##   ${2} - The second positional parameter is the apiType to execute. Such as
+##          'dashboard', 'alert', or another API type.
+##   ${3} - The third positional parameter is the tag that should be removed.
 ## 
 ## Outputs:
+##          The following return values are returned:
+##          0 - Successfully removed the tag
+##          1 - Failed to remove the tag
+##          3 - The tag was not set
 ##
 ##############################################################################
 
@@ -507,7 +550,7 @@ function removeTag {
     logThis "Required parameter #1 'id' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'dashboard'\
+     #2 the apiType to query such as 'dashboard' or 'alert'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"
   fi
   if [ -z "${apiType}" ];
@@ -515,7 +558,7 @@ function removeTag {
     logThis "Required parameter #2 'apiType' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'dashboard'\
+     #2 the apiType to query such as 'dashboard' or 'alert'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"  
   fi
   if [ -z "${tag}" ];
@@ -523,7 +566,7 @@ function removeTag {
     logThis "Required parameter #3 'tag' missing." "SEVERE"
     logThis "The function SetACL requires 3 arguments in positional order. \
      #1 the ID of the object\
-     #2 the apiType to query such as 'dashboard'\
+     #2 the apiType to query such as 'dashboard' or 'alert'\
      #3 the tag that should be set such as 'published.dashboard'" "Error"
   fi
   local result
@@ -533,23 +576,34 @@ function removeTag {
   -H "Authorization: Bearer  ${apiToken}" | jq -r '.response.items' | grep "${tag}")
   if [[ "${result}" == "  \"${tag}\"" ]];
   then
-    logThis "The ${tag} tag is already set in the ${apiType} ${id}." "INFO"
-    logThis "The ${apiType} ${id} has tags set ${result}." "DEBUG"
+    if (curl -X 'DELETE' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag/${tag}" \
+    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${apiToken}");
+    then
+      logThis "Successfully removed tag ${tag} on ${apiType} ${id}." "INFO"
+      return 0
+    else
+      logThis "Could not remove tag ${tag} on ${apiType} ${id}." "ERROR"
+      return 1
+    fi
   else
-    curl -X 'PUT' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag/${tag}" \
-    -H 'Content-Type: application/json' -H "Authorization: Bearer  ${apiToken}" && \
-    logThis "Successfully set tag ${tag} on ${apiType} ${id}." "INFO" || \
-    logThis "Could not set tag ${tag} on ${apiType} ${id}." "ERROR"
+    logThis "The ${tag} tag is not set in the ${apiType} ${id}." "INFO"
+    logThis "The ${apiType} ${id} does not have tag ${tag} set ${result}." "DEBUG"
+    return 3
   fi
 }
 
 ##############################################################################
-## Function Name: 
-## Purpose:
+## Function Name: createDir
+## Purpose: The purpose of this function is to test to see if a directory 
+##          exists and if not, to create it and the parent directories.
 ##
 ## Inputs:
+##   ${1} - The first positional parameter is to specify the full path of the 
+##          directory to create.
 ## 
 ## Outputs:
+##          The directory passed to the function exists already or was created.
+##          Returns 0 if successful and 1 if not successful.
 ##
 ##############################################################################
 
@@ -565,14 +619,21 @@ function createDir {
     logThis "Directory ${dir} exists" "DEBUG"
   else
     logThis "Executing the command[mkdir ${dir}]" "DEBUG"
-    mkdir -p "${dir}" && logThis "Successfully created ${dir}." "INFO" || logThis "Error creating directory ${dir}." "CRITICAL"
+    if (mkdir -p "${dir}");
+    then
+      logThis "Successfully created ${dir}." "INFO"
+      return 0
+    else
+      logThis "Error creating directory ${dir}." "CRITICAL"
+      return 1
+    fi
   fi
 }
 
 ##############################################################################
 ## Function Name: extractResponse
-## Purpose: This function is used to extract the json response body from an
-##          API response.
+## Purpose: This function is used to extract the sorted json response body 
+##          from an API response.
 ##
 ## Inputs:
 ##   ${1} - first positional parameter passed will be the json file to 
@@ -593,13 +654,15 @@ function createDir {
 ##############################################################################
 
 function extractResponse {
-  createDir "${2}"
+  local file="${1}"
+  local dir="${2}"
+  createDir "${dir}"
   logThis "Extracting JSON response body from file." "INFO"
   local _FILENAME
-  _FILENAME=$(basename "${1}")
-  logThis "Executing the command [jq -r '.response' ${1} > ${2}/${_FILENAME}.response]" "DEBUG"
-  jq -r '.response' "${1}" > "${2}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${1}." "CRITICAL"
-  logThis "Extracted JSON response body from file ${1} and storing it in the directory ${2}." "DEBUG"
+  _FILENAME=$(basename "${file}")
+  logThis "Executing the command [jq -S '.response' ${file} > ${dir}/${_FILENAME}.response]" "DEBUG"
+  jq -S '.response' "${file}" > "${dir}/${_FILENAME}.response" && logThis "Successfully extracted JSON response body." "INFO" || logThis "Could not extract JSON response body from file ${file}." "CRITICAL"
+  logThis "Extracted JSON response body from file ${file} and storing it in the directory ${dir}." "DEBUG"
 }
 
 ##################################################################################
@@ -642,14 +705,86 @@ function extractResponse {
 
 function scrubResponse {
   local jsonFile="${1}"
-  local scrubBody="${2}"
+  local myScrubBody="${2}"
   logThis "Scrubbing response to remove metadata." "INFO"
-  logThis "Executing command: [jq \"${scrubBody}\" < \"${jsonFile}.response\" > ${jsonFile}]" "DEBUG"
-  if (jq "${scrubBody}" < "${jsonFile}.response" > "${jsonFile}");
+  logThis "Executing command: [jq \"${myScrubBody}\" < \"${jsonFile}.response\" > ${jsonFile}]" "DEBUG"
+  if jq "${myScrubBody}" < "${jsonFile}.response" > "${jsonFile}";
   then
-    logThis "Successfully scrubbed JSON response body." "INFO" \
+    logThis "Successfully scrubbed JSON response body." "INFO" 
   else
     logThis "Could not scrub JSON response body from file ${jsonFile}.response." "CRITICAL"
   fi
 }
 
+##############################################################################
+## Function Name: processCloneFileName
+## Purpose: The purpose of this function is to process the filename and remove
+##          any -Clone suffix to the name.
+## Inputs:
+##   ${1} - The first positional parameter to pass is the filename of the file
+##          to process. Calling logic may pass _FILENAME which is defined in loop.
+##          _FILENAME=$(basename "${filename}")     
+##   ${2} - The second positional parameter to pass is the directory where the
+##          response body is stored and where the file should be processed.
+##          Common reference is the 'responseDir'
+## 
+## Outputs:
+##          The output is setting _FILENAME to the new processed filename that
+##          removes the -Clone* from the end of the name and adds .json ext.
+##
+##############################################################################
+
+function processCloneFileName {
+  local file="${1}"
+  local dir="${2}"
+
+  logThis "Stripping working copy Clone tags from filename ${file} before publishing." "INFO"
+  newFILENAME=$(echo "${file}" | awk -F '-Clone' '{print $1}').json
+  logThis "Rename the file ${dir}/${file}.response to ${dir}/${newFILENAME}.response" "INFO"
+  mv "${dir}/${file}.response" "${dir}/${newFILENAME}.response"
+  _FILENAME="${newFILENAME}"
+  unset newFILENAME
+}
+
+##############################################################################
+## Function Name: processCloneID
+## Purpose: The purpose of this function is to process the url and id json keys
+##          in the file. The function also returns the new ID 
+##
+## Inputs:
+##   ${1} - The first positional parameter to pass is type of ID we to be 
+##          processed. For example, you may pass 'dashboard' or 'alert'
+##          We use this to aid in logging to make things easier to follow.
+##   ${2} - The second positional parameter to pass is the ID of the object to
+##          process. This may be the dashboardID or the alertID.
+##   ${3} - The third positional parameter to pass is the filename of the file
+##          to process. Calling logic may pass _FILENAME which is defined in loop.
+##          _FILENAME=$(basename "${filename}")     
+##   ${4} - The fourth positional parameter to pass is the directory where the
+##          response body is stored and where the file should be processed.
+##          Common reference is the 'responseDir'
+##
+## Outputs:
+##          The output is processing the file and modifying the url and id
+##          json keys in the file. The function also returns the new ID so 
+##          call the function as the value of a variable.
+##
+## Example:
+##   dashboardID=$(processCloneID 'dashboard' "${dashboardID}" "${_FILENAME}" "${responseDir}")
+##
+##############################################################################
+
+function processCloneID {
+  local type="${1}"
+  local id="${2}"
+  local file="${3}"
+  local dir="${4}"
+  logThis "Stripping working copy Clone tags from ${type} file ${file} before publishing." "INFO"
+  _ID=$(echo "${id}" | awk -F '-Clone' '{print $1}')
+  logThis "Changing (${type}ID) in file from ${id} to ${_ID} in file ${file}." "DEBUG"
+  sed -i '.clone' "s/${id}/${_ID}/g" "${dir}/${file}.response"
+  logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"
+  sed -i '' -E 's/ \(Clone.*$/",/' "${dir}/${file}.response"
+  logThis "Changing (${type}ID) variable from ${id} to ${_ID}." "DEBUG"
+  echo "${_ID}"
+}

@@ -1,10 +1,10 @@
 {
-  "reason": "To prevent duplicate alerts when changes to an alert are staged.",
-  "title": "Staged Alert Changes maintenance window",
+  "reason": "${reason}",
+  "title": "${title}",
   "startTimeInSeconds": 1672531200,
   "endTimeInSeconds": 4070908800,
   "relevantCustomerTags": [
-    "staged.alert"
+    "${tag}"
   ],
   "relevantHostNames": [],
   "relevantHostTags": [],

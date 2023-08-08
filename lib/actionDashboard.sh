@@ -16,41 +16,15 @@ source "${baseDir}/lib/common.sh"
 
 source "${baseDir}/lib/libDashboard.sh"
 
-scrubBody=scrubBody="del(.disableRefreshInLiveMode) | \
-  del(.hideChartWarning) | \
-  del(.creatorId) | \
-  del(.updaterId) | \
-  del(.createdEpochMillis) | \
-  del(.updatedEpochMillis) | \
-  del(.deleted) | \
-  del(.numCharts) | \
-  del(.numFavorites) | \
-  del(.favorite)"
+scrubBody="$(cat ${baseDir}/templates/scrubBodyDashboard.template)"
 
 # Loop through dashboard files in dashboard dir
 for filename in "${dashboardDir}"/*.json; do
   logThis "Processing ${filename}" "INFO"
   _FILENAME=$(basename "${filename}")
   getDashboardID "${filename}"
-  if [[ "${_FILENAME}" == *"-Clone"* ]];
-  then
-    logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-    processCloneFileName "${_FILENAME}"
-    # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-    processCloneID "${_FILENAME}"
-  else
-    if [[ "${dashboardID}" == *"-Clone"* ]];
-    then
-      logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-      processCloneID "${_FILENAME}"
-    else
-      echo "Not a clone."
-      echo "${_FILENAME}"
-      echo "${dashboardID}"
-    fi
-  fi
-
-  scrubResponse "${responseDir}/${_FILENAME}" "${scrubBody}"
+  # Let's just copy the file to correct name since processed upon commit through staged processing.
+  cp "${responseDir}/${_FILENAME}.response" "${responseDir}/${_FILENAME}"
 
   # Failing
   if getDashboard;
@@ -72,13 +46,6 @@ for filename in "${dashboardDir}"/*.json; do
 
   # Set the published tag as per the config
   setTag "$dashboardID" 'dashboard' "${CONF_dashboard_published_tag}"
-
-  # Remove issueKey and staged tags
-  removeTag "$dashboardID" 'dashboard' "${CONF_dashboard_staged_tag}"
-  gitConfig="${baseDir}/cfg/${CONF_repoManagementPlatform}.yaml"
-
-  issueKeyPrefix=$(yq '.REPO.tracker.issueTagPrefix' "${gitConfig}")
-  removeTag "$dashboardID" 'dashboard' "${issueKeyPrefix}.*"
 
   # Clean up temp files?
   if ${CONF_dashboard_cleanTmpFiles};

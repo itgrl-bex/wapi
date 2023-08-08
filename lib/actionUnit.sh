@@ -16,52 +16,29 @@ source "${baseDir}/lib/libAlert.sh"
 source "${baseDir}/lib/libAccount.sh"
 source "${baseDir}/lib/libGithub.sh"
 
+scrubBody="$(cat ${baseDir}/templates/scrubBodyDashboard.template)"
+
 # Becca's testing
 # Loop through dashboard files in dashboard dir
 for filename in "${dashboardDir}"/*.json; do
     logThis "Processing ${filename}" "INFO"
     _FILENAME=$(basename "${filename}")
     getDashboardID "${filename}"
-    if [[ "${_FILENAME}" == *"-Clone"* ]];
-    then
-      logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
-      processCloneFileName "${_FILENAME}"
-      # Now that we have changed the filename, we need to process the dashboard name and dashboard ID.
-      processCloneID "${_FILENAME}"
-    else
-      if [[ "${dashboardID}" == *"-Clone"* ]];
-      then
-        logThis "Detected that the dashboard ID (${dashboardID}) has documented working copy clone tags." "INFO"
-        processCloneID "${_FILENAME}"
-      else
-        echo "Not a clone."
-        echo "${_FILENAME}"
-        echo "${dashboardID}"
-      fi
-    fi
+    # Let's just copy the file to correct name since processed upon commit through staged processing.
+    cp "${responseDir}/${_FILENAME}.response" "${responseDir}/${_FILENAME}"
 
-    scrubResponse "${responseDir}/${_FILENAME}"
-
-    echo '########################################################################################'
-    echo "${dashboardID}"
-
-    # Failing
     if getDashboard;
     then
       extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
-      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-      echo "I am groot!"
-      scrubResponse "${sourceDir}/${_FILENAME}"
+      scrubResponse "${sourceDir}/${_FILENAME}" "${scrubBody}"
       if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
       then
+        echo "I AM GROOOT!"
         pushDashboard "${dashboardID}"
       fi
     else
-      echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-      echo 'I am not groot!'
       if [[ ${#} == 3 ]];
       then
-        echo 'I am GROOOOOOT!'
         logThis "Skipped processing dashboard ${dashboardID} due to fresh creation." "INFO"
       else
         logThis "An unexpected error has ocurred. Dashboard ${dashboardID} could not be retrieved or created." "SEVERE"
@@ -91,7 +68,10 @@ done
 # Validate all dashboards with the tag defined in CONF_dashboard_published_tag have the proper ACL set.
 for d in $(searchTag 'dashboard' "${CONF_dashboard_published_tag}");
 do
+  echo "${dashboardDir}"
+  echo "grep \"${d}\" \"${dashboardDir}\"/*.json | grep '\"id\":' | awk -F '\"' '{print \$4}'"
   dashboardPresent=$(grep "${d}" "${dashboardDir}"/*.json | grep '"id":' | awk -F '"' '{print $4}')
+  echo "${dashboardPresent}"
   if [[ "${dashboardPresent}" == "${d}" ]];
   then
     logThis "Confirmed published dashboard ${d} in remote and in repo." "INFO"
@@ -100,7 +80,7 @@ do
     logThis "Confirmed published dashboard ${d} in remote and is not in the repo." "INFO"
     logThis "Deleting published dashboard ${d} due to it not being in a file." "INFO"
     # Delete functionality places dashboard in trash for 30 days to be able to be recovered.
-    deleteDashboard "${d}"
+    # deleteDashboard "${d}"
   fi
 done
 
