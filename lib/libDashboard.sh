@@ -8,6 +8,29 @@
 
 source "${baseDir}/lib/common.sh"
 
+# Moving to library files to set action specific directories for reusability.
+# If dataPath is set in the config, use it.
+# Otherwise use the script base directory of ${baseDir}
+
+tmpDir=$( getTmpDir )
+
+if [ -z "${CONF_dataPath}" ];
+then
+  logThis "Does not have data path set." "INFO"
+  dashboardDir="${baseDir}/${CONF_dashboard_dir}"
+  sourceDir="${tmpDir}/${CONF_dashboard_sourceDir}"
+  responseDir="${tmpDir}/dashboards/responses"
+  accountDir="${baseDir}/${CONF_account_dir}"
+  alertDir="${baseDir}/${CONF_alert_dir}"
+else
+  logThis "Has data path '${CONF_dataPath}' set." "INFO" 
+  dashboardDir="${CONF_dataPath}/${CONF_dashboard_dir}"
+  sourceDir="${tmpDir}/${CONF_dashboard_sourceDir}"
+  responseDir="${tmpDir}/dashboards/responses"
+  accountDir="${CONF_dataPath}/${CONF_account_dir}"
+  alertDir="${CONF_dataPath}/${CONF_alert_dir}"
+fi
+
 function getDashboardID {
   if [ -z "${1}" ];
   then
@@ -98,33 +121,6 @@ function pushDashboard {
     -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully pushed dashboard ${dashboardID}." "INFO" || logThis "Could not pushed dashboard ${dashboardID}." "CRITICAL"
 }
 
-# Moved to common.sh
-# function processCloneFileName {
-#   logThis "Stripping working copy Clone tags from filename ${1} before publishing." "INFO"
-#   echo 'file process'
-#   newFILENAME=$(echo "${_FILENAME}" | awk -F '-Clone' '{print $1}').json
-#   logThis "Rename the file ${responseDir}/${_FILENAME}.response to ${responseDir}/${newFILENAME}.response" "INFO"
-#   echo "${_FILENAME}"
-#   echo "${newFILENAME}"
-#   mv "${responseDir}/${_FILENAME}.response" "${responseDir}/${newFILENAME}.response"
-#   _FILENAME="${newFILENAME}"
-#   unset newFILENAME
-
-# }
-
-# Moved to common.sh
-# function processCloneID {
-#   logThis "Stripping working copy Clone tags from file ${1} before publishing." "INFO"
-#   local _dashboardID
-#   _dashboardID=$(echo "${dashboardID}" | awk -F '-Clone' '{print $1}')
-#   logThis "Changing (dashboardID) in file from ${dashboardID} to ${_dashboardID} in file ${_FILENAME}." "DEBUG"
-#   sed -i '.clone' "s/${dashboardID}/${_dashboardID}/g" "${responseDir}/${_FILENAME}.response"
-#   logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"
-#   sed -i '' -E 's/ \(Clone\)//' "${responseDir}/${_FILENAME}.response"
-#   logThis "Changing (dashboardID) variable from ${dashboardID} to ${_dashboardID}." "DEBUG"
-#   dashboardID="${_dashboardID}"
-# }
-
 function deleteDashboard {
   logThis "Deleting Dashboard ${1}" "INFO"
   logThis "Executing command:  [curl -X 'DELETE' \"${CONF_aria_operationsUrl}/api/v2/dashboard/${1}?skipTrash=false\" -H 'Content-Type: application/json' -H \"Authorization: Bearer  ${apiToken}]\"" "DEBUG"
@@ -141,4 +137,8 @@ function createDashboard {
     "${CONF_aria_operationsUrl}/api/v2/dashboard" \
     -H 'Content-Type: application/json' \
     -H "Authorization: Bearer  ${apiToken}" && logThis "Successfully created the dashboard ${dashboardID}." "INFO" || logThis "Could not create the dashboard ${dashboardID}." "CRITICAL"
+}
+
+function searchDashboard {
+  local 
 }

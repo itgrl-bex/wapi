@@ -26,14 +26,31 @@ for filename in "${dashboardDir}"/*.json; do
   # Let's just copy the file to correct name since processed upon commit through staged processing.
   cp "${responseDir}/${_FILENAME}.response" "${responseDir}/${_FILENAME}"
 
-  # Failing
   if getDashboard;
   then
     extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
     scrubResponse "${sourceDir}/${_FILENAME}" "${scrubBody}"
     if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
     then
-      pushDashboard "${dashboardID}"
+      ## wrap logic below in if statement for success on pushing dashboard
+      if pushDashboard "${dashboardID}";
+      then
+        issueKeyPrefix=$(yq '.REPO.tracker.issueTagPrefix' "cfg/${CONF_repoManagementPlatform}.yaml")
+        ## Logic to search for dashboard ID containing "${dashboardID}" where not exactly "${dashboardID}"
+        foundIssues=( $(searchTag 'dashboard' "${issueKeyPrefix}") )
+        ## If working copy found, get tags and compare with issue key tracker.
+        for i in "${foundIssues[@]}";
+        do
+          if [[ "${i}" == *"${dashboardID}"* ]];
+          then
+            logThis "We are publishing dashboard ${dashboardID} so removing tags from working copy ${i}" "INFO"
+            removeTag 'dashboard' "${CONF_dashboard_staged_tag}"
+            removeTag 'dashboard' "${issueKeyPrefix}.*"
+          fi
+        done
+      else
+        echo 'GROOOOOT'
+      fi
     fi
   else
     if [[ ${#} == 3 ]];
@@ -45,7 +62,7 @@ for filename in "${dashboardDir}"/*.json; do
   fi
 
   # Set the published tag as per the config
-  setTag "$dashboardID" 'dashboard' "${CONF_dashboard_published_tag}"
+  setTag "${dashboardID}" 'dashboard' "${CONF_dashboard_published_tag}"
 
   # Clean up temp files?
   if ${CONF_dashboard_cleanTmpFiles};

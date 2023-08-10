@@ -17,6 +17,7 @@ source "${baseDir}/lib/libDashboard.sh"
 # Load appropriate git functions based on appropriate git management platform being used.
 # shellcheck disable=SC1090 disable=SC2154
 source "${baseDir}/lib/lib${CONF_repoManagementPlatform}.sh"
+echo "source ${baseDir}/lib/lib${CONF_repoManagementPlatform}.sh"
 
 scrubBody="$(cat ${baseDir}/templates/scrubBodyDashboard.template)"
 
@@ -66,13 +67,40 @@ else
 fi
 
 # Override working directories to use tmp until I can change the others to use tmpDir
-createDir "${CONF_tmpDir}/dashboards"
+createDir "${tmpDir}/dashboards"
 # shellcheck disable=SC2154 # Reusable code for tasks, the config is loaded and used later in the tasks.
-sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
-responseDir="${CONF_tmpDir}/dashboards/responses"
+sourceDir="${tmpDir}/${CONF_dashboard_sourceDir}"
+responseDir="${tmpDir}/dashboards/responses"
 dashboardDir="${dataPath}/${CONF_dashboard_dir}"
 
 foundDashboards=($(searchTag 'dashboard' "${CONF_dashboard_staged_tag}"))
+
+## Search for issuekey.issue tag from issue tracker file and remove if no objects found in API
+# Logic to remove issuekey.issue from issue tracker file
+while read -r l;
+do
+  i=$(echo ${l} | awk -F '::' '{print $1}')
+  d=$(echo ${l} | awk -F '::' '{print $2}')
+
+  getDashboard "${d}"
+  if grep "${i}" "${sourceDir}/${d}.json";
+  then
+    logThis "Issue ${i} is still actively being worked for dashboard ${d}." "INFO"
+  else
+    logThis "Issue ${i} is not tagged on working copy dashboard ${d} and will be removed." "INFO"
+    # Saving deletes to a temp file to prevent reading and writing in the same loop.
+    echo "${l}" >> "${tmpDir}/issueTrackerDeletes"
+  fi
+done < "${dashboardDir}/issueTracker"
+
+# Looping through the deletes file to remove entries from "${dashboardDir}/issueTracker"
+if [ -f "${tmpDir}/issueTrackerDeletes" ];
+then
+  while read -r l;
+  do
+    sed -i "${l}/d" "${dashboardDir}/issueTracker"
+  done
+fi
 
 for d in "${foundDashboards[@]}";
 do
@@ -118,6 +146,7 @@ do
     # shellcheck disable=SC2034 # This is used later in templates.
     issueKey=$(jq -r ".tags.customerTags" "${responseDir}/${_FILENAME}" | grep "${REPO_tracker_issueTagPrefix}" | awk -F '"' '{print $2}' | awk -F '.' '{print $2}')
     sed -i '' "s/${CONF_dashboard_staged_tag}/${CONF_dashboard_published_tag}/g" "${responseDir}/${_FILENAME}"
+    trackedIssue="${REPO_tracker_issueTagPrefix}.${issueKey}"
   else
     logThis "${REPO_tracker_issueTagPrefix} issue key not set. It is required to set the issue to link everything together." "ERROR"
     removeTag "${d}" 'dashboard' "${CONF_dashboard_staged_tag}"
@@ -133,6 +162,15 @@ do
     echo "Running command [jq \"del(.tags.customerTags[] | select(. | contains(\"${REPO_tracker_issueTagPrefix}.\")))\" \"${responseDir}/${_FILENAME}.removeissuekey\" > \"${responseDir}/${_FILENAME}\"]"
     jq "del(.tags.customerTags[] | select(. | contains(\"${REPO_tracker_issueTagPrefix}.\")))" "${responseDir}/${_FILENAME}.removeissuekey" > "${responseDir}/${_FILENAME}"
 
+    # ### Logic to add issue to issue tracker file
+    # if grep "${trackedIssue}" "${dashboardDir}/issueTracker";
+    #   logThis "Issue ${trackedIssue} for dashboard ${d} is already being tracked." "INFO"
+    # then
+    #   logThis "Tracking issue ${trackedIssue} for dashboard ${d}." "INFO"
+    #   echo "${trackedIssue}::${d}" >> "${dashboardDir}/issueTracker"
+    #   # need to commit
+    # fi
+
     createBranch 'dashboard' "${d}" "${author}" "${gitBranchNameTemplate}" "${issueKey}" "${CONF_dashboard_staged_tag}"
     if [ -f "${dashboardDir}/${_FILENAME}" ];
     then
@@ -144,6 +182,7 @@ do
         gitPush
         if "${needPR}";
         then
+          echo "tag is ${CONF_dashboard_staged_tag}"
           createPullRequest "${gitRepo}" "${REPO_git_api_url}" "${apiGitToken}" 'dashboard' "${d}" "${gitRepoBaseBranch}" "${gitPRSubjectTemplate}" "${gitPRMessageTemplate}" "${CONF_dashboard_staged_tag}" "${dashboardID}"
         else
           logThis "PR ${prNum} exists for this dashboard ${d}." "INFO"

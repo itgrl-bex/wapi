@@ -30,28 +30,8 @@ scriptLogDir="${CONF_logging_dir}/${CONF_appName}"
 scriptLogPath="${scriptLogDir}/${CONF_appName}-${dateForFileName}.log"
 scriptLoggingLevel="${CONF_logging_level}"
 
-# If dataPath is set in the config, use it.
-# Otherwise use the script base directory of ${baseDir}
-
-if [ -z "${CONF_dataPath}" ];
-then
-  logThis "Does not have data path set." "INFO"
-  dashboardDir="${baseDir}/${CONF_dashboard_dir}"
-  sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
-  responseDir="${CONF_tmpDir}/dashboards/responses"
-  accountDir="${baseDir}/${CONF_account_dir}"
-  alertDir="${baseDir}/${CONF_alert_dir}"
-else
-  logThis "Has data path '${CONF_dataPath}' set." "INFO" 
-  dashboardDir="${CONF_dataPath}/${CONF_dashboard_dir}"
-  sourceDir="${CONF_tmpDir}/${CONF_dashboard_sourceDir}"
-  responseDir="${CONF_tmpDir}/dashboards/responses"
-  accountDir="${CONF_dataPath}/${CONF_account_dir}"
-  alertDir="${CONF_dataPath}/${CONF_alert_dir}"
-fi
-
 # Setting apiToken value
-if [[ ! -z "${CONF_aria_apiToken}" ]];
+if [ -n "${CONF_aria_apiToken}" ];
 then
   apiToken=$CONF_aria_apiToken
   unset CONF_aria_apiToken
@@ -119,17 +99,17 @@ while getopts "bdgufae :hi:s:t:" option; do
       t) # API Token
           logThis "Overriding the config file API token values." "INFO"
           apiToken="${OPTARG}"
-          if [[ ! -z "${CONF_account_apiToken}" ]];
+          if [ -n "${CONF_account_apiToken}" ];
           then
             logThis "Clearing variable CONF_account_apiToken due to override." "INFO"
             unset CONF_account_apiToken
           fi
-          if [[ ! -z "${CONF_alert_apiToken}" ]];
+          if [ -n "${CONF_alert_apiToken}" ];
           then
             logThis "Clearing variable CONF_alert_apiToken due to override." "INFO"
             unset CONF_alert_apiToken
           fi
-          if [[ ! -z "${CONF_dashboard_apiToken}" ]];
+          if [ -n "${CONF_dashboard_apiToken}" ];
           then
             logThis "Clearing variable CONF_dashboard_apiToken due to override." "INFO"
             unset CONF_dashboard_apiToken
@@ -145,7 +125,7 @@ case $action in
 
   account)
     echo "Let's modify some groups"
-    if [[ ! -z "${CONF_account_apiToken}" ]];
+    if [ -n "${CONF_account_apiToken}" ];
     then
       apiToken=$CONF_account_apiToken
       unset CONF_aria_apiToken
@@ -155,7 +135,7 @@ case $action in
 
   processStagedAccounts)
     echo "Let's modify some groups"
-    if [[ ! -z "${CONF_account_apiToken}" ]];
+    if [ -n "${CONF_account_apiToken}" ];
     then
       apiToken=$CONF_account_apiToken
       unset CONF_aria_apiToken
@@ -165,7 +145,7 @@ case $action in
 
   alert)
     echo "Let's publish some alerts"
-    if [[ ! -z "${CONF_alert_apiToken}" ]];
+    if [ -n "${CONF_alert_apiToken}" ];
     then
       apiToken=$CONF_alert_apiToken
       unset CONF_aria_apiToken
@@ -175,7 +155,7 @@ case $action in
 
   processStagedAlerts)
     echo "Let's process some alerts"
-    if [[ ! -z "${CONF_alert_apiToken}" ]];
+    if [ -n "${CONF_alert_apiToken}" ];
     then
       apiToken=$CONF_alert_apiToken
       unset CONF_aria_apiToken
@@ -184,7 +164,7 @@ case $action in
     ;;
 
   dashboard)
-    if [[ ! -z "${CONF_dashboard_apiToken}" ]];
+    if [ -n "${CONF_dashboard_apiToken}" ];
     then
       apiToken=$CONF_dashboard_apiToken
       unset CONF_dashboard_apiToken
@@ -193,7 +173,7 @@ case $action in
     ;;
 
   processStagedDashboards)
-    if [[ ! -z "${CONF_dashboard_apiToken}" ]];
+    if [ -n "${CONF_dashboard_apiToken}" ];
     then
       apiToken=$CONF_dashboard_apiToken
       unset CONF_aria_apiToken
@@ -202,7 +182,7 @@ case $action in
     ;;
 
   singleDashboard)
-    if [[ ! -z "${CONF_dashboard_apiToken}" ]];
+    if [ -n "${CONF_dashboard_apiToken}" ];
     then
       apiToken=$CONF_dashboard_apiToken
       unset CONF_dashboard_apiToken
