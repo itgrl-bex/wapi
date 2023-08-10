@@ -62,6 +62,20 @@ CONF:
         modifyAcl:
           - # Group or User ID
           - "4service-user-acct-todo-thisACLactio"
+    managedGroups:
+      # - 'SUPER_ADMIN'
+      # - 'ADMIN'
+      # - 'OPS'
+      # - 'DASHBOARD_DEV'
+      # - 'ALERT_DEV'
+      #- 'my-test-group'
+      #- 'Everyone'
+    LDAP:
+      #Server: 'ldap://ldap.forumsys.com'
+      #baseDN: 'dc=example,dc=com'
+      #bindDN: 'cn=read-only-admin,dc=example,dc=com'
+      #bindPassword: 'password' #Maybe grab this from vault?
+
     # Optional: set the new owner of found orphans for account objects
     # orphanage:
     #   owner:
