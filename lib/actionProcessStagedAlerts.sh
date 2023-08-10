@@ -24,7 +24,7 @@ source "${baseDir}/lib/actionMaintenanceWindow.sh"
 
 # Set Alert Scrub body to remove variant data later.
 # shellcheck disable=SC2086
-scrubBody="$(cat \"${baseDir}/templates/scrubBodyAlert.template\")"
+scrubBody="$(cat ${baseDir}/templates/scrubBodyAlert.template)"
 
 # Check to see if single repo or split code and data repos
 if "${REPO_git_dataRepo}";
@@ -72,7 +72,34 @@ else
 fi
 
 # Create the working directory 
-createDir "${CONF_tmpDir}/${CONF_alert_dir}"
+createDir "${tmpDir}/${CONF_alert_dir}"
+
+## Search for issuekey.issue tag from issue tracker file and remove if no objects found in API
+# Logic to remove issuekey.issue from issue tracker file
+while read -r l;
+do
+  i=$(echo ${l} | awk -F '::' '{print $1}')
+  d=$(echo ${l} | awk -F '::' '{print $2}')
+
+  getAlert "${d}"
+  if grep "${i}" "${sourceDir}/${d}.json";
+  then
+    logThis "Issue ${i} is still actively being worked for alert ${d}." "INFO"
+  else
+    logThis "Issue ${i} is not tagged on working copy alert ${d} and will be removed." "INFO"
+    # Saving deletes to a temp file to prevent reading and writing in the same loop.
+    echo "${l}" >> "${tmpDir}/issueTrackerDeletes"
+  fi
+done < "${alertDir}/issueTracker"
+
+# Looping through the deletes file to remove entries from "${alertDir}/issueTracker"
+if [ -f "${tmpDir}/issueTrackerDeletes" ];
+then
+  while read -r l;
+  do
+    sed -i "${l}/d" "${alertDir}/issueTracker"
+  done
+fi
 
 for alert in $(searchTag 'alert' "${CONF_alert_staged_tag}");
 do
@@ -80,7 +107,7 @@ do
   getAlert "${alert}"
   filename="${sourceDir}/${alert}.json"
   _FILENAME=$(basename "${filename}")
-  getAlertID "${filename}"
+  getAlertID "${filename}" "${responseDir}"
   if [[ "${_FILENAME}" == *"-Clone"* ]];
   then
     logThis "Detected that ${_FILENAME} has documented working copy clone tags." "INFO"
@@ -126,6 +153,19 @@ do
   # Copy file to dataDir to process PR
   if validateJSON "${responseDir}/${_FILENAME}";
   then
+    ## Remove issuekey before comparing.
+    cp "${responseDir}/${_FILENAME}" "${responseDir}/${_FILENAME}.removeissuekey"
+    echo "Running command [jq \"del(.tags.customerTags[] | select(. | contains(\"${REPO_tracker_issueTagPrefix}.\")))\" \"${responseDir}/${_FILENAME}.removeissuekey\" > \"${responseDir}/${_FILENAME}\"]"
+    jq "del(.tags.customerTags[] | select(. | contains(\"${REPO_tracker_issueTagPrefix}.\")))" "${responseDir}/${_FILENAME}.removeissuekey" > "${responseDir}/${_FILENAME}"
+
+    ### Logic to add issue to issue tracker file
+    if grep "${trackedIssue}" "${alertDir}/issueTracker";
+      logThis "Issue ${trackedIssue} for alert ${d} is already being tracked." "INFO"
+    then
+      logThis "Tracking issue ${trackedIssue} for alert ${d}." "INFO"
+      echo "${trackedIssue}::${d}" >> "${alertDir}/issueTracker"
+    fi
+
     createBranch 'alert' "${alert}" "${author}" "${gitBranchNameTemplate}" "${issueKey}" "${CONF_alert_staged_tag}"
     if [ -f "${alertDir}/${_FILENAME}" ];
     then

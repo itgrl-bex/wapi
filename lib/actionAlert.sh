@@ -13,7 +13,7 @@ source "${baseDir}/lib/common.sh"
 source "${baseDir}/lib/libAlert.sh"
 
 # Set Alert Scrub body to remove variant data later.
-scrubBody="$(cat \"${baseDir}/templates/scrubBodyAlert.template\")"
+scrubBody="$(cat ${baseDir}/templates/scrubBodyAlert.template)"
 
 # Loop through alert files in alert dir
 for filename in "${alertDir}"/*.json; do
@@ -40,14 +40,29 @@ for filename in "${alertDir}"/*.json; do
 
     scrubResponse "${responseDir}/${_FILENAME}" "${scrubBody}"
 
-  # Failing
   if getAlert;
   then
     extractResponse "${sourceDir}/${_FILENAME}" "${sourceDir}"
     scrubResponse "${sourceDir}/${_FILENAME}" "${scrubBody}"
     if compareFile "${responseDir}/${_FILENAME}" "${sourceDir}/${_FILENAME}";
     then
-      pushAlert "${alertID}"
+      ## wrap logic below in if statement for success on pushing alert
+      if pushAlert "${alertID}";
+      then
+        issueKeyPrefix=$(yq '.REPO.tracker.issueTagPrefix' "cfg/${CONF_repoManagementPlatform}.yaml")
+        ## Logic to search for alert ID containing "${alertID}" where not exactly "${alertID}"
+        foundIssues=( $(searchTag 'alert' "${issueKeyPrefix}") )
+        ## If working copy found, get tags and compare with issue key tracker.
+        for i in "${foundIssues[@]}";
+        do
+          if [[ "${i}" == *"${alertID}"* ]];
+          then
+            logThis "We are publishing alert ${alertID} so removing tags from working copy ${i}" "INFO"
+            removeTag 'alert' "${CONF_alert_staged_tag}"
+            removeTag 'alert' "${issueKeyPrefix}.*"
+          fi
+        done
+      fi
     fi
   else
     if [[ ${#} == 3 ]];
@@ -98,6 +113,6 @@ do
     logThis "Confirmed published alert ${a} in remote and is not in the repo." "INFO"
     logThis "Deleting published alert ${a} due to it not being in a file." "INFO"
     # Delete functionality places alert in trash for 30 days to be able to be recovered.
-    deletealert "${a}"
+    deleteAlert "${a}"
   fi
 done

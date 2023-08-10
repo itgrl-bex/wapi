@@ -34,33 +34,6 @@ scriptLogPath="${scriptLogDir}/${CONF_appName}-${dateForFileName}.log"
 # shellcheck disable=SC2154 # Reusable code for tasks, the config is loaded and used later in the tasks.
 scriptLoggingLevel="${CONF_logging_level}"
 
-# If dataPath is set in the config, use it.
-# Otherwise use the script base directory of ${baseDir}
-
-if [[ -z "${CONF_dataPath}" ]];
-then
-  # shellcheck disable=SC2154 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  dashboardDir="${baseDir}/${CONF_dashboard_dir}"
-  # shellcheck disable=SC2154 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  sourceDir="${baseDir}/${CONF_dashboard_sourceDir}"
-  responseDir="${dashboardDir}/responses"
-  # shellcheck disable=SC2154 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  accountDir="${baseDir}/${CONF_account_dir}"
-  # shellcheck disable=SC2154 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  alertDir="${baseDir}/${CONF_alert_dir}"
-else
-  createDir "${CONF_dataPath}"
-  dashboardDir="${CONF_dataPath}${CONF_dashboard_dir}"
-  # shellcheck disable=SC2034 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  sourceDir="${CONF_dataPath}${CONF_dashboard_sourceDir}"
-  # shellcheck disable=SC2034 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  responseDir="${dashboardDir}/responses"
-  # shellcheck disable=SC2034 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  accountDir="${CONF_dataPath}${CONF_account_dir}"
-  # shellcheck disable=SC2034 # Reusable code for tasks, the config is loaded and used later in the tasks.
-  alertDir="${CONF_dataPath}${CONF_alert_dir}"
-fi
-
 # Setting apiToken value
 if [[ -n "${CONF_aria_apiToken}" ]];
 then

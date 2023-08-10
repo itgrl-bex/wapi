@@ -9,6 +9,29 @@
 
 source "${baseDir}/lib/common.sh"
 
+# Moving to library files to set action specific directories for reusability.
+# If dataPath is set in the config, use it.
+# Otherwise use the script base directory of ${baseDir}
+
+tmpDir=$( getTmpDir )
+
+if [ -z "${CONF_dataPath}" ];
+then
+  logThis "Does not have data path set." "INFO"
+  dashboardDir="${baseDir}/${CONF_dashboard_dir}"
+  accountDir="${baseDir}/${CONF_account_dir}"
+  alertDir="${baseDir}/${CONF_alert_dir}"
+  sourceDir="${tmpDir}/${CONF_alert_sourceDir}"
+  responseDir="${tmpDir}/${CONF_alert_dir}/responses"
+else
+  logThis "Has data path '${CONF_dataPath}' set." "INFO" 
+  dashboardDir="${CONF_dataPath}/${CONF_dashboard_dir}"
+  accountDir="${CONF_dataPath}/${CONF_account_dir}"
+  alertDir="${CONF_dataPath}/${CONF_alert_dir}"  
+  sourceDir="${tmpDir}/${CONF_alert_sourceDir}"
+  responseDir="${tmpDir}/${CONF_alert_dir}/responses"
+fi
+
 ##############################################################################
 ## Function Name: createMaintenanceWindow
 ## Purpose: The purpose of this function is to execute the creation of the
@@ -186,9 +209,7 @@ function getAlertID {
     logThis "Required parameter #2 'responseDir' missing." "SEVERE"
   fi
   logThis "Retrieving alertID" "INFO"
-  local _OUTPUT
-  _OUTPUT=$(jq -r '.response' "${filename}")
-  if [[ -z "${_OUTPUT}" ]];
+  if grep '"response":' "${1}";
   then
     alertID=$(jq -r '.response.id' "${filename}")
     echo "${alertID}"

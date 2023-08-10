@@ -61,47 +61,90 @@ function logThis() {
 
     logMessage="${1}"
     logMessagePriority="${2}"
+    doNotEcho="${3}"
 
     logPriorities=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3 [SEVERE]=4 [CRITICAL]=5)
     [[ ${logPriorities[$logMessagePriority]} ]] || return 1
     (( ${logPriorities[$logMessagePriority]} < ${logPriorities[$scriptLoggingLevel]} )) && return 2
 
-    # No log dir, create it.
-    # No log file, create it.
-    if ! [[ -d ${scriptLogDir} ]]
+
+    if ${doNotEcho};
     then
-        echo -e "INFO : No log directory located, creating new log directory (${scriptLogDir})."
-        echo "${dateTime} : PID $$ :INFO : No log directory located, creating new log directory (${scriptLogDir})." >> "${scriptLogPath}"
-        mkdir -p $scriptLogDir
+      # If doNotEcho is true, then do not echo to stdout
+      # No log dir, create it.
+      # No log file, create it.
+      if ! [[ -d ${scriptLogDir} ]]
+      then
+          # echo -e "INFO : No log directory located, creating new log directory (${scriptLogDir})."
+          echo "${dateTime} : PID $$ :INFO : No log directory located, creating new log directory (${scriptLogDir})." >> "${scriptLogPath}"
+          mkdir -p $scriptLogDir
+      fi
+
+      # No log file, create it.
+      if ! [[ -f ${scriptLogPath} ]]
+      then
+          # echo -e "INFO : No log file located, creating new log file (${scriptLogPath})."
+          echo "${dateTime} : PID $$ :INFO : No log file located, creating new log file (${scriptLogPath})." >> "${scriptLogPath}"
+          openLog
+      fi
+
+      # Write log details to file
+      # echo -e "${logMessagePriority} : ${logMessage}"
+      echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${logMessage}" >> "${scriptLogPath}"
+
+      # Exiting program if SEVERE or CRITICAL
+      case $logMessagePriority in
+        CRITICAL)
+          _msg="Received ERROR with severity of ${logMessagePriority}. Exiting program to prevent additional problems with distributed systems."
+          # echo -e "${logMessagePriority} : ${_msg}"
+          echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${_msg}" >> "${scriptLogPath}"
+          exit 1      
+        ;;
+        SEVERE)
+          _msg="Received ERROR with severity of ${logMessagePriority}. Exiting program to prevent additional problems with distributed systems."
+          # echo -e "${logMessagePriority} : ${_msg}"
+          echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${_msg}" >> "${scriptLogPath}"
+          exit 1
+        ;;
+      esac
+    else
+      # No log dir, create it.
+      # No log file, create it.
+      if ! [[ -d ${scriptLogDir} ]]
+      then
+          echo -e "INFO : No log directory located, creating new log directory (${scriptLogDir})."
+          echo "${dateTime} : PID $$ :INFO : No log directory located, creating new log directory (${scriptLogDir})." >> "${scriptLogPath}"
+          mkdir -p $scriptLogDir
+      fi
+
+      # No log file, create it.
+      if ! [[ -f ${scriptLogPath} ]]
+      then
+          echo -e "INFO : No log file located, creating new log file (${scriptLogPath})."
+          echo "${dateTime} : PID $$ :INFO : No log file located, creating new log file (${scriptLogPath})." >> "${scriptLogPath}"
+          openLog
+      fi
+
+      # Write log details to file
+      echo -e "${logMessagePriority} : ${logMessage}"
+      echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${logMessage}" >> "${scriptLogPath}"
+
+      # Exiting program if SEVERE or CRITICAL
+      case $logMessagePriority in
+        CRITICAL)
+          _msg="Received ERROR with severity of ${logMessagePriority}. Exiting program to prevent additional problems with distributed systems."
+          echo -e "${logMessagePriority} : ${_msg}"
+          echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${_msg}" >> "${scriptLogPath}"
+          exit 1      
+        ;;
+        SEVERE)
+          _msg="Received ERROR with severity of ${logMessagePriority}. Exiting program to prevent additional problems with distributed systems."
+          echo -e "${logMessagePriority} : ${_msg}"
+          echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${_msg}" >> "${scriptLogPath}"
+          exit 1
+        ;;
+      esac
     fi
-
-    # No log file, create it.
-    if ! [[ -f ${scriptLogPath} ]]
-    then
-        echo -e "INFO : No log file located, creating new log file (${scriptLogPath})."
-        echo "${dateTime} : PID $$ :INFO : No log file located, creating new log file (${scriptLogPath})." >> "${scriptLogPath}"
-        openLog
-    fi
-
-    # Write log details to file
-    echo -e "${logMessagePriority} : ${logMessage}"
-    echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${logMessage}" >> "${scriptLogPath}"
-
-    # Exiting program if SEVERE or CRITICAL
-    case $logMessagePriority in
-      CRITICAL)
-        _msg="Received ERROR with severity of ${logMessagePriority}. Exiting program to prevent additional problems with distributed systems."
-        echo -e "${logMessagePriority} : ${_msg}"
-        echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${_msg}" >> "${scriptLogPath}"
-        exit 1      
-      ;;
-      SEVERE)
-        _msg="Received ERROR with severity of ${logMessagePriority}. Exiting program to prevent additional problems with distributed systems."
-        echo -e "${logMessagePriority} : ${_msg}"
-        echo -e "${dateTime} : PID $$ : ${logMessagePriority} : ${_msg}" >> "${scriptLogPath}"
-        exit 1
-      ;;
-    esac
 }
 
 ##############################################################################
@@ -129,7 +172,9 @@ function help {
     These options do not accept arguments
     At least one of these flags is required
     -a Process Alert modifications
+    -e Process Staged Alerts modifications
     -d Process Dashboard modifications
+    -g Process Staged Dashboards modifications
     -u Process Account modifications
     -h Print this message
 
@@ -139,6 +184,25 @@ function help {
     -t <value> API Token to override config API token
 
   "
+}
+
+##############################################################################
+## Function Name: getTmpDir
+## Purpose: Use configured CONF_tmpDir or create a temp dir using mktemp -d
+##
+## Outputs: The temp directory to use
+##
+## Example: tmpDir=$(getTmpDir)
+##
+##############################################################################
+
+function getTmpDir {
+  if [ -n "${CONF_tmpDir}" ];
+  then
+    echo "${CONF_tmpDir}"
+  else
+    mktemp -d -t wapi || exit 1
+  fi 
 }
 
 ##############################################################################
@@ -344,11 +408,11 @@ function setACL {
 
   logThis "Checking ACL for ${apiType} ${id}." "INFO"
   local tracker="acl-${dateTime}"
-  local remoteACL="${CONF_tmpDir}/${apiType}-${tracker}-${id}.json"
+  local remoteACL="${tmpDir}/${apiType}-${tracker}-${id}.json"
   if getACL "${id}" "${apiType}" "${remoteACL}" ;
   then
-    local _remoteModifyAcl=($(jq -r '.modifyAcl' "${remoteACL}" | jq -r '.[].id'))
-    local _modifyAcl=($(yq ".CONF.${apiType}.published.acls.modifyAcl" -o=json $config | jq -r '.[]'))
+    local _remoteModifyAcl=( $(jq -r '.modifyAcl' "${remoteACL}" | jq -r '.[].id') )
+    local _modifyAcl=( $(yq ".CONF.${apiType}.published.acls.modifyAcl" -o=json $config | jq -r '.[]') )
     changed=false
     for r in "${_remoteModifyAcl[@]}";
     do
@@ -367,8 +431,8 @@ function setACL {
       fi
     done
 
-    local _remoteViewAcl=($(jq -r '.viewAcl' "${remoteACL}" | jq -r '.[].id'))
-    local _viewAcl=($(yq ".CONF.${apiType}.published.acls.viewAcl" -o=json $config | jq -r '.[]'))
+    local _remoteViewAcl=( $(jq -r '.viewAcl' "${remoteACL}" | jq -r '.[].id') )
+    local _viewAcl=( $(yq ".CONF.${apiType}.published.acls.viewAcl" -o=json $config | jq -r '.[]') )
     for r in "${_remoteViewAcl[@]}";
     do
       if [[ ! " ${_viewAcl[*]} " =~ ${r} ]];
@@ -403,6 +467,54 @@ function setACL {
   fi
 
 }
+
+##############################################################################
+## Function Name: getTags
+## Purpose: The purpose is to return the list of tags on the apiType object
+##
+## Inputs:
+##   ${1} - The first positional parameter is the json 'id' of the object to
+##          set the tag on.
+##   ${2} - The second positional parameter is the apiType to execute. Such as
+##          'dashboard', 'alert', or another API type.
+## 
+## Outputs:
+##          Returns the tags found.
+##          The following return codes values are returned:
+##          0 - Successfully retrieved the tags
+##          1 - Failed to retrieve the tags
+##
+##############################################################################
+
+# Migrating to common function from libDashboard.sh
+function getTags {
+ local id="${1}"
+ local apiType="${2}"
+ # Add variable validation to ensure variables are set.
+  if [ -z "${id}" ];
+  then
+    logThis "Required parameter #1 'id' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"
+  fi
+  if [ -z "${apiType}" ];
+  then
+    logThis "Required parameter #2 'apiType' missing." "SEVERE"
+    logThis "The function SetACL requires 3 arguments in positional order. \
+     #1 the ID of the object\
+     #2 the apiType to query such as 'dashboard'\
+     #3 the tag that should be set such as 'published.dashboard'" "Error"  
+  fi
+  local result
+  result=( $(curl -X 'GET' "${CONF_aria_operationsUrl}/api/v2/${apiType}/${id}/tag" -H 'accept: application/json' \
+    -H "Authorization: Bearer  ${apiToken}" | jq -r '.response.items' | sed 's/\[//' | sed 's/\]//' | sed 's/,/ /g') )
+
+  echo "${result}"
+
+}
+
 
 ##############################################################################
 ## Function Name: setTag
@@ -779,12 +891,12 @@ function processCloneID {
   local id="${2}"
   local file="${3}"
   local dir="${4}"
-  logThis "Stripping working copy Clone tags from ${type} file ${file} before publishing." "INFO"
+  logThis "Stripping working copy Clone tags from ${type} file ${file} before publishing." "INFO" true
   _ID=$(echo "${id}" | awk -F '-Clone' '{print $1}')
-  logThis "Changing (${type}ID) in file from ${id} to ${_ID} in file ${file}." "DEBUG"
+  logThis "Changing (${type}ID) in file from ${id} to ${_ID} in file ${file}." "DEBUG" true
   sed -i '.clone' "s/${id}/${_ID}/g" "${dir}/${file}.response"
-  logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG"
+  logThis "Changing dashboard name to remove the (Clone) designation." "DEBUG" true
   sed -i '' -E 's/ \(Clone.*$/",/' "${dir}/${file}.response"
-  logThis "Changing (${type}ID) variable from ${id} to ${_ID}." "DEBUG"
+  logThis "Changing (${type}ID) variable from ${id} to ${_ID}." "DEBUG" true
   echo "${_ID}"
 }

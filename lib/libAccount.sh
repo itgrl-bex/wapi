@@ -8,6 +8,28 @@
 
 source ${baseDir}/lib/common.sh
 
+# Moving to library files to set action specific directories for reusability.
+# If dataPath is set in the config, use it.
+# Otherwise use the script base directory of ${baseDir}
+
+tmpDir=$( getTmpDir )
+
+if [ -z "${CONF_dataPath}" ];
+then
+  logThis "Does not have data path set." "INFO"
+  dashboardDir="${baseDir}/${CONF_dashboard_dir}"
+  accountDir="${baseDir}/${CONF_account_dir}"
+  alertDir="${baseDir}/${CONF_alert_dir}"
+  sourceDir="${tmpDir}/${CONF_account_sourceDir}"
+  responseDir="${tmpDir}/${CONF_account_dir}/responses"
+else
+  logThis "Has data path '${CONF_dataPath}' set." "INFO" 
+  dashboardDir="${CONF_dataPath}/${CONF_dashboard_dir}"
+  accountDir="${CONF_dataPath}/${CONF_account_dir}"
+  alertDir="${CONF_dataPath}/${CONF_alert_dir}"  
+  sourceDir="${tmpDir}/${CONF_account_sourceDir}"
+  responseDir="${tmpDir}/${CONF_account_dir}/responses"
+fi
 
 function getGroups {
   # This function is to get and process group list so that local copy of group name and id is present.
