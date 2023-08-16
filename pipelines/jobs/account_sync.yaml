@@ -1,0 +1,52 @@
+#resources:
+# - name: wapi
+#   type: git
+#   source:
+#     uri: https://github.com/itgrl-bex/wapi.git
+#     branch: aanimasaun/account-sync
+
+# - name: hourly-timer
+#   type: time
+#   source: {interval: 4h}
+
+
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: {repository: image, tag: 1.0.1}
+
+inputs:
+  - name: wapi
+
+run:
+  path: /bin/sh
+  args: ["./wapi.sh", "-u"]
+
+
+
+# jobs:
+# - name: run-scripts
+#   plan:
+#   # - get: wapi
+#   #   trigger: true
+#   - task: sync_user_account
+#     config:
+#       platform: linux
+#       image_resource:
+#         type: docker-image
+#         source: 
+#           repository: redmanh/ci-runner
+#           tag: 1.0.1
+#       # inputs:
+#       # - name: wapi
+#       run:
+#         path: /bin/sh
+#         args:
+#         - -c
+#         - |
+#           pwd
+#           ls -al
+
+
