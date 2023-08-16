@@ -196,3 +196,5 @@ CONF:
     # SEVERE and CRITICAL will exit the program and log the exit
     level: 'WARN'
     dir: '/var/log/wapi/'
+
+  tmpDir: "/tmp/wapi"

@@ -35,9 +35,9 @@ do
     ## Get all users belonging to the specified group in LDAP
     getLDAPGroupMembers ${groupName}
 
-    compare ldap membership with Aria
-    add when not found in Aria
-    For each user in the group; do
+    # compare ldap membership with Aria
+    # add when not found in Aria
+    # For each user in the group; do
     jq -r '.[]' ${CONF_tmpDir}/${groupName}_aria.json | while IFS= read -r user; do
         echo "Checking for user ${user} in ${CONF_tmpDir}/${groupName}_ldap.json"
         if jq -e ".[] | select(. == \"${user}\")" ${CONF_tmpDir}/${groupName}_ldap.json > /dev/null; then
